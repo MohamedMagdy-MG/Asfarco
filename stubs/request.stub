@@ -1,0 +1,35 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class {{ class }} extends FormRequest
+{
+    
+    public static function authorize()
+    {
+        return false;
+    }
+
+    
+    public function rules()
+    {
+        return [
+            '*' => 'required'
+        ];
+    }
+    public static function Message()
+    {
+        request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+        if($language == 'ar'){
+            return [
+                '*.required' => 'حقل *  مطلوب',
+            ];
+        }else{
+            return [
+                '*.required' => 'The * field is required.',
+            ];
+        }
+    }
+}
