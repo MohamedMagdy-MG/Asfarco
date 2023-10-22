@@ -3,8 +3,11 @@ namespace App\Http\RepoClasses\mobile;
 
 use App\Helpers\Helper;
 use App\Http\RepoInterfaces\mobile\AuthInterface;
+use App\Http\Resources\mobile\AddressResource;
 use App\Http\Resources\mobile\CityResource;
+use App\Http\Resources\mobile\DocumentResource;
 use App\Http\Resources\mobile\NationalityResource;
+use App\Http\Resources\mobile\PaymentResource;
 use App\Mail\frontend\activeAccount;
 use App\Mail\frontend\resetPassword;
 use App\Models\Avatar;
@@ -55,7 +58,73 @@ class AuthRepo implements AuthInterface{
 
         return Helper::ResponseData(NationalityResource::collection($nationalities),$message,true,200);
     }
-    
+    public function SocialLogin($data = []){
+        $user = $this->user->where('email',$data['email'])->where('register_type',$data['login_type'])->first();
+        if(!$user){
+            $user = $this->user->create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'image' => $data['image'], 
+                'password' => Hash::make($data['name'].'Asfarco'),
+                'register_type' => $data['login_type'],
+                'otp' => null,
+                'Verify_at' => null,
+                'email_verified_at' => Carbon::now(new DateTimeZone('Asia/Dubai')),
+                'social_login' => false,
+            ]);
+        }else{
+            $user->update([
+                'name' => $data['name'],
+                'image' => $data['image'], 
+                'password' => Hash::make($data['name'].'Asfarco'),
+            ]);
+        }
+        $token = Auth::guard('api')->login($user);
+        if (!$token) {
+            request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+            $language == 'en' ? $message = 'Invalid Credential' : $message = 'بيانات غير صالحة';
+            return Helper::ResponseData(null,$message,false, 401);
+        }
+
+        
+        if(Auth::guard('api')->user()->active == false){
+            request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+            $language == 'en' ? $message = 'Your account is suspended, please contact system support' : $message = 'تم تعليق حسابك، يرجى الاتصال بدعم النظام';
+            return Helper::ResponseData(null,$message,false, 400,[
+                'email-suspended' => $message
+            ]);
+        }
+
+        if(Auth::guard('api')->user()->email_verified_at == null){
+            request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+            $language == 'en' ? $message = 'please verify your email address to activate your account' : $message = 'يرجى التحقق من عنوان بريدك الإلكتروني لتفعيل حسابك';
+            return Helper::ResponseData(null,$message,false, 400,[
+                'email-verify' => $message
+            ]);
+        }
+        
+        request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+        $language == 'en' ? $message = 'you have logged in successfully' : $message = 'لقد قمت بتسجيل الدخول بنجاح';
+        return Helper::ResponseData([
+            // 'name' => Auth::guard('api')->user()->name,
+            // 'email' => Auth::guard('api')->user()->email,
+            // 'image' => Auth::guard('api')->user()->image,
+            'token' => $token,
+            'PersonalInformation' => [
+                'name' => Auth::guard('api')->user()->name,
+                'email' => Auth::guard('api')->user()->email,
+                'mobile' => Auth::guard('api')->user()->mobile,
+                'gender' => Auth::guard('api')->user()->gender,
+                'image' => Auth::guard('api')->user()->image,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
+                'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+            ],
+            'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
+            
+        ],$message,true,200);
+    }
 
     public function Login($data = []){
         if($data['login_type'] == 'Email'){
@@ -103,10 +172,19 @@ class AuthRepo implements AuthInterface{
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $language == 'en' ? $message = 'you have logged in successfully' : $message = 'لقد قمت بتسجيل الدخول بنجاح';
         return Helper::ResponseData([
-            'name' => Auth::guard('api')->user()->name,
-            'email' => Auth::guard('api')->user()->email,
-            'image' => Auth::guard('api')->user()->image,
             'token' => $token,
+            'PersonalInformation' => [
+                'name' => Auth::guard('api')->user()->name,
+                'email' => Auth::guard('api')->user()->email,
+                'mobile' => Auth::guard('api')->user()->mobile,
+                'gender' => Auth::guard('api')->user()->gender,
+                'image' => Auth::guard('api')->user()->image,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
+                'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+            ],
+            'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
             
         ],$message,true,200);
     }
@@ -277,10 +355,19 @@ class AuthRepo implements AuthInterface{
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $language == 'en' ? $message = 'The account has been activated successfully' : $message = 'لقد تم تفعيل الحساب بنجاح';
         return Helper::ResponseData([
-            'name' => Auth::guard('api')->user()->name,
-            'email' => Auth::guard('api')->user()->email,
-            'image' => Auth::guard('api')->user()->image,
             'token' => $token,
+            'PersonalInformation' => [
+                'name' => Auth::guard('api')->user()->name,
+                'email' => Auth::guard('api')->user()->email,
+                'mobile' => Auth::guard('api')->user()->mobile,
+                'gender' => Auth::guard('api')->user()->gender,
+                'image' => Auth::guard('api')->user()->image,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
+                'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+            ],
+            'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
             
         ],$message,true,200);
 
@@ -377,10 +464,19 @@ class AuthRepo implements AuthInterface{
         $language == 'en' ? $message = 'The password has been reset successfully' : $message = 'تمت إعادة تعيين كلمة المرور بنجاح';
 
         return Helper::ResponseData([
-            'name' => Auth::guard('api')->user()->name,
-            'email' => Auth::guard('api')->user()->email,
-            'image' => Auth::guard('api')->user()->image,
             'token' => $token,
+            'PersonalInformation' => [
+                'name' => Auth::guard('api')->user()->name,
+                'email' => Auth::guard('api')->user()->email,
+                'mobile' => Auth::guard('api')->user()->mobile,
+                'gender' => Auth::guard('api')->user()->gender,
+                'image' => Auth::guard('api')->user()->image,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
+                'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+            ],
+            'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
             
         ],$message,true,200);
 

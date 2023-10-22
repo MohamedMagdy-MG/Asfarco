@@ -110,4 +110,8 @@ class Car extends Model
     public function Colors(){
         return $this->hasMany(CarHasColors::class,'car_id','uuid');
     }
+
+    public function Reservation(){
+        return $this->hasMany(Reservation::class,'car_id','uuid');
+    }
 }

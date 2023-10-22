@@ -21,6 +21,11 @@ interface ProfileInterface
     public function DeletePayment($id);
     public function Favourite($id);
     public function GetFavourites();
+    public function GetPendingReservations();
+    public function GetOngoingReservations();
+    public function GetCompletedReservations();
+    public function GetCancelledReservations();
+    public function ReservationDetails($reservation_id);
     public function Logout();
                     
 }

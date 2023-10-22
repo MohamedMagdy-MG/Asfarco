@@ -12,9 +12,9 @@ use Illuminate\Support\Str;
 class Reservation extends Model
 {
     use HasFactory,SoftDeletes;
-    // mode => Daily,Weekly,Monthly
+    // mode => Daily,Weekly,Monthly,Yearly
     // payment_mode => Cash,Visa,Bitcoin
-    // status => Pending,Ongoing,CompletedوCancelled
+    // status => Pending,Ongoing,Completed,Cancelled
 
     protected $fillable = [
         'uuid',

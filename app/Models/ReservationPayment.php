@@ -19,7 +19,8 @@ class ReservationPayment extends Model
         'month',
         'date',
         'cvv',
-        'reservation_id'
+        'reservation_id',
+        'stripe_operation_id'
     ];
     protected $casts = [];
     protected $hidden = [

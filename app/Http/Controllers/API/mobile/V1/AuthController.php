@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\RepoClasses\mobile\AuthRepo;
 use App\Http\Requests\mobile\Auth\ActiveAccountRequest;
 use App\Http\Requests\mobile\Auth\ForgetPasswordRequest;
+use App\Http\Requests\mobile\Auth\LoginBySocialRequest;
 use App\Http\Requests\mobile\Auth\LoginRequest;
 use App\Http\Requests\mobile\Auth\RegisterEmailRequest;
 use App\Http\Requests\mobile\Auth\RegisterRequest;
@@ -61,7 +62,25 @@ class AuthController extends Controller
 
     }
 
+    public function SocialLogin(Request $request)
 
+    {
+        $validator = Validator::make($request->only(['name','email','image','login_type']),LoginBySocialRequest::rules(),LoginBySocialRequest::Message());
+        if($validator->fails()){
+            request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+            $language == 'en' ? $message = 'Login failed' : $message = 'فشلت عملية تسجيل الدخول';
+            return Helper::ResponseData(null,$message,false,400,$validator->errors());
+        }else{
+            $data = [
+                'email' => $request->email,
+                'name' => $request->name,
+                'image' => $request->image,
+                'login_type' => $request->login_type
+            ];
+            return $this->authRepo->SocialLogin($data);
+        }   
+
+    }
     public function Login(Request $request)
 
     {

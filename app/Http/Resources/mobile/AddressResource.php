@@ -23,7 +23,7 @@ class AddressResource extends JsonResource
             'id' => $this->uuid,
             'label' => $this->label ,
             'address' => $this->address ,
-            'CityName' =>  $language == 'ar' ? $this->City->name_en : $this->City->name_ar  ,
+            'CityName' =>  $language == 'ar' ? $this->City->name_ar : $this->City->name_en  ,
             
             
         ];

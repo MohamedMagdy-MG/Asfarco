@@ -43,6 +43,8 @@ class User extends Authenticatable implements JWTSubject
         'otp',
         'Reset_at',
         'otp_reset',
+
+        'social_login'
         
     ];
 
@@ -104,6 +106,10 @@ class User extends Authenticatable implements JWTSubject
 
     public function Address(){
         return $this->hasMany(UserAddress::class,'user_id','uuid');
+    }
+
+    public function Reservations(){
+        return $this->hasMany(Reservation::class,'user_id','uuid');
     }
 
     

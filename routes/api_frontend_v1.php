@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function(){
     Route::get('nationalities','AuthController@getAllNationalities');
     Route::post('login','AuthController@Login');
+    Route::post('socialLogin','AuthController@SocialLogin');
     Route::post('register','AuthController@Register');
     Route::post('sendVerificationCode','AuthController@SendVerificationCode');
     Route::post('activeAccount','AuthController@ActiveAccount');
@@ -21,6 +22,13 @@ Route::prefix('uploads')->group(function(){
 
 Route::prefix('profile')->group(function(){
     Route::get('/','ProfileController@Profile');
+    Route::prefix('reservation')->group(function(){
+        Route::get('/pending','ProfileController@GetPendingReservations');
+        Route::get('/ongoing','ProfileController@GetOngoingReservations');
+        Route::get('/completed','ProfileController@GetCompletedReservations');
+        Route::get('/cancelled','ProfileController@GetCancelledReservations');
+        Route::post('/','ProfileController@ReservationDetails');
+    });
     Route::put('/','ProfileController@UpdateProfile');  
     Route::put('/firebaseToken','ProfileController@UpdateFirebaseToken');  
     Route::put('/language','ProfileController@UpdateLanguage');  
@@ -45,6 +53,17 @@ Route::prefix('profile')->group(function(){
 Route::prefix('home')->group(function(){
     Route::get('/categories','HomeController@getAllCategories');
     Route::get('/cars','HomeController@getAllHomePageCars');
+    
+});
+
+Route::prefix('reservation')->group(function(){
+    Route::get('/address','ReservationController@Address');
+    Route::get('/payment','ReservationController@Payments');
+    Route::post('/features','ReservationController@Features');
+    Route::post('/','ReservationController@Reserve');
+    Route::post('/cancel','ReservationController@Cancel');
+    Route::post('/car','ReservationController@CheckCarReservation');
+    Route::post('/fatora','ReservationController@Fatora');
     
 });
 

@@ -19,6 +19,7 @@ class CarFeaturesResource extends JsonResource
         
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         return [
+            'id' => $this->uuid,
             'name' => $language == 'ar' ? $this->Feature->name_ar : $this->Feature->name_en,
         ];
     }

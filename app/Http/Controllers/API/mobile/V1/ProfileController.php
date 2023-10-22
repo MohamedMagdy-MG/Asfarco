@@ -10,6 +10,7 @@ use App\Http\Requests\mobile\Profile\AddPaymentRequest;
 use App\Http\Requests\mobile\Profile\DeleteAddressRequest;
 use App\Http\Requests\mobile\Profile\DeletePaymentRequest;
 use App\Http\Requests\mobile\Profile\FacouriteRequest;
+use App\Http\Requests\mobile\Profile\ShowReservationDetailsRequest;
 use App\Http\Requests\mobile\Profile\UpdateAddressRequest;
 use App\Http\Requests\mobile\Profile\UpdateFirebaseTokenRequest;
 use App\Http\Requests\mobile\Profile\UpdateLanguageRequest;
@@ -282,6 +283,41 @@ class ProfileController extends Controller
     public function GetFavourites(){
         
         return $this->profileRepo->GetFavourites();
+    }
+
+    public function GetPendingReservations(){
+        
+        return $this->profileRepo->GetPendingReservations();
+    }
+
+    public function GetOngoingReservations(){
+        
+        return $this->profileRepo->GetOngoingReservations();
+    }
+
+    public function GetCompletedReservations(){
+        
+        return $this->profileRepo->GetCompletedReservations();
+    }
+
+    public function GetCancelledReservations(){
+        
+        return $this->profileRepo->GetCancelledReservations();
+    }
+    public function ReservationDetails(Request $request){ 
+        
+        $validator = Validator::make($request->only(['reservation_id']),ShowReservationDetailsRequest::rules(),ShowReservationDetailsRequest::Message());
+        if($validator->fails()){
+            request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+            $language == 'en' ? $message = 'The process failed to show the vehicle reservation' : $message = 'فشلت العملية في إظهار حجز السيارة';
+            return Helper::ResponseData(null,$message,false,400,$validator->errors());
+        }else{
+            
+           
+            return $this->profileRepo->ReservationDetails($request->reservation_id);
+        }  
+        
+
     }
 
     

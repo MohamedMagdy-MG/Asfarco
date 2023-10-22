@@ -72,6 +72,14 @@ class HomeController extends Controller
         if(array_key_exists('id',$_GET)){
             $id = $_GET['id'];
         }
+        $start_date = null;
+        if(array_key_exists('start_date',$_GET)){
+            $start_date = $_GET['start_date'];
+        }
+        $return_date = null;
+        if(array_key_exists('return_date',$_GET)){
+            $return_date = $_GET['return_date'];
+        }
         $price = null;
         if(array_key_exists('price',$_GET)){
             $price = $_GET['price'];
@@ -116,7 +124,7 @@ class HomeController extends Controller
         if(array_key_exists('transmission',$_GET)){
             $transmission = $_GET['transmission'];
         }
-        return $this->homeRepo->getAllCars($id,$price,$brand,$model,$year,$category,$color,$fuel_type,$features,$passengers,$luggae,$transmission);
+        return $this->homeRepo->getAllCars($id,$start_date,$return_date,$price,$brand,$model,$year,$category,$color,$fuel_type,$features,$passengers,$luggae,$transmission);
     }
     public function getAllCarDetailsPageCars()
     {

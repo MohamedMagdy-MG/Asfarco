@@ -5,5 +5,10 @@
     "sortNum": 10000,
     "created": "2023-10-12T06:14:37.064Z",
     "modified": "2023-10-12T06:14:37.064Z",
-    "data": []
+    "data": [
+        {
+            "name": "baseurl",
+            "value": "http://localhost:8000/Asfarco/api"
+        }
+    ]
 }

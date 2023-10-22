@@ -12,6 +12,7 @@ use App\Http\Requests\frontend\Auth\RegisterEmailRequest;
 use App\Http\Requests\frontend\Auth\RegisterRequest;
 use App\Http\Requests\frontend\Auth\ResetPasswordRequest;
 use App\Http\Requests\frontend\Auth\SendVerificationCodeRequest;
+use App\Http\Requests\mobile\Auth\LoginBySocialRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -29,6 +30,26 @@ class AuthController extends Controller
     
     public function getAllNationalities(Request $request){
         return $this->authRepo->getAllNationalities();
+    }
+
+    public function SocialLogin(Request $request)
+
+    {
+        $validator = Validator::make($request->only(['name','email','image','login_type']),LoginBySocialRequest::rules(),LoginBySocialRequest::Message());
+        if($validator->fails()){
+            request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+            $language == 'en' ? $message = 'Login failed' : $message = 'فشلت عملية تسجيل الدخول';
+            return Helper::ResponseData(null,$message,false,400,$validator->errors());
+        }else{
+            $data = [
+                'email' => $request->email,
+                'name' => $request->name,
+                'image' => $request->image,
+                'login_type' => $request->login_type
+            ];
+            return $this->authRepo->SocialLogin($data);
+        }   
+
     }
 
     public function Register(Request $request)

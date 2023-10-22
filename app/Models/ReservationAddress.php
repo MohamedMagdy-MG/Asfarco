@@ -15,7 +15,7 @@ class ReservationAddress extends Model
         'uuid',
         'address',
         'city_id',
-        'user_id',
+        'reservation_id',
     ];
     protected $casts = [];
     protected $hidden = [

@@ -23,7 +23,7 @@ class CreateReservationsTable extends Migration
             $table->foreign('car_id')->on('cars')->references('uuid')->onDelete('CASCADE')->onUpdate('CASCADE');
             $table->string('user_id')->nullable();
             $table->foreign('user_id')->on('users')->references('uuid')->onDelete('CASCADE')->onUpdate('CASCADE');
-            $table->enum('mode',['Daily','Weekly','Monthly'])->default('Daily');
+            $table->enum('mode',['Daily','Weekly','Monthly','Yearly'])->default('Daily');
             $table->enum('payment_mode',['Cash','Visa','Bitcoin'])->default('Cash');
             $table->enum('status',['Pending','Ongoing','Completed','Cancelled'])->default('Pending');
             $table->dateTime('cancelled_on')->nullable();

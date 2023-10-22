@@ -10,6 +10,8 @@ use App\Http\Resources\mobile\CityResource;
 use App\Http\Resources\mobile\DocumentResource;
 use App\Http\Resources\mobile\NationalityResource;
 use App\Http\Resources\mobile\PaymentResource;
+use App\Http\Resources\mobile\ReservationCarResource;
+use App\Http\Resources\mobile\ReservationResource;
 use App\Models\Car;
 use App\Models\CarFavourites;
 use App\Models\City;
@@ -24,6 +26,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Reservation;
+
 
 class ProfileRepo implements ProfileInterface
 {
@@ -34,6 +38,7 @@ class ProfileRepo implements ProfileInterface
     public $carFavourites;
     public $userAddress;
     public $car;
+    public $reservation;
     public function __construct()
     {
         $this->city = new City();
@@ -43,6 +48,7 @@ class ProfileRepo implements ProfileInterface
         $this->userAddress = new UserAddress();
         $this->carFavourites = new CarFavourites();
         $this->car = new Car();
+        $this->reservation = new Reservation();
 
     }
 
@@ -107,6 +113,14 @@ class ProfileRepo implements ProfileInterface
                     'user_id' => Auth::guard('api')->user()->uuid
                 ]);
             }
+
+            
+        }
+
+        if(is_array($data['Documents']) && count($data['Documents']) > 0 && $data['gender'] != null && $data['mobile'] != null && $$data['nationality'] != null){
+            Auth::guard('api')->user()->update([
+                'social_login' => true
+            ]);
         }
         
         
@@ -647,6 +661,103 @@ class ProfileRepo implements ProfileInterface
         $language == 'en' ? $message = 'The operation succeeded in reaching all cars' : $message = 'نجحت العملية في الوصول إلى جميع السيارات';
 
         return Helper::ResponseData($data,$message,true,200);
+    }
+
+    public function GetPendingReservations(){
+        
+        $reservation = $this->reservation->where('user_id',Auth::guard('api')->user()->uuid)->where('status','Pending');
+        
+        $reservation = $reservation->latest()->paginate(10);
+        $data = [
+            'Reservations' => ReservationCarResource::collection($reservation),
+            'Pagination' => [
+                'total'       => $reservation->total(),
+                'count'       => $reservation->count(),
+                'perPage'     => $reservation->perPage(),
+                'currentPage' => $reservation->currentPage(),
+                'totalPages'  => $reservation->lastPage()
+            ]
+        ];
+        request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+        $language == 'en' ? $message = 'The operation succeeded in reaching all pending reservation' : $message = 'نجحت العملية في الوصول إلى جميع الحجوزات المعلقة';
+
+        return Helper::ResponseData($data,$message,true,200);
+    }
+
+    public function GetOngoingReservations(){
+        
+        $reservation = $this->reservation->where('user_id',Auth::guard('api')->user()->uuid)->where('status','Ongoing');
+        
+        $reservation = $reservation->latest()->paginate(10);
+        $data = [
+            'Reservations' => ReservationCarResource::collection($reservation),
+            'Pagination' => [
+                'total'       => $reservation->total(),
+                'count'       => $reservation->count(),
+                'perPage'     => $reservation->perPage(),
+                'currentPage' => $reservation->currentPage(),
+                'totalPages'  => $reservation->lastPage()
+            ]
+        ];
+        request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+        $language == 'en' ? $message = 'The operation succeeded in reaching all ongoing reservation' : $message = 'نجحت العملية في الوصول إلى جميع الحجوزات المستمرة';
+
+        return Helper::ResponseData($data,$message,true,200);
+    }
+    public function GetCompletedReservations(){
+        
+        $reservation = $this->reservation->where('user_id',Auth::guard('api')->user()->uuid)->where('status','Completed');
+        
+        $reservation = $reservation->latest()->paginate(10);
+        $data = [
+            'Reservations' => ReservationCarResource::collection($reservation),
+            'Pagination' => [
+                'total'       => $reservation->total(),
+                'count'       => $reservation->count(),
+                'perPage'     => $reservation->perPage(),
+                'currentPage' => $reservation->currentPage(),
+                'totalPages'  => $reservation->lastPage()
+            ]
+        ];
+        request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+        $language == 'en' ? $message = 'The operation succeeded in reaching all completed reservation' : $message = 'نجحت العملية في الوصول إلى جميع الحجوزات المكتملة';
+
+        return Helper::ResponseData($data,$message,true,200);
+    }
+    public function GetCancelledReservations(){
+        
+        $reservation = $this->reservation->where('user_id',Auth::guard('api')->user()->uuid)->where('status','Cancelled');
+        
+        $reservation = $reservation->latest()->paginate(10);
+        $data = [
+            'Reservations' => ReservationCarResource::collection($reservation),
+            'Pagination' => [
+                'total'       => $reservation->total(),
+                'count'       => $reservation->count(),
+                'perPage'     => $reservation->perPage(),
+                'currentPage' => $reservation->currentPage(),
+                'totalPages'  => $reservation->lastPage()
+            ]
+        ];
+        request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+        $language == 'en' ? $message = 'The operation succeeded in reaching all cancelled reservation' : $message = 'نجحت العملية في الوصول إلى جميع الحجوزات الملغية';
+
+        return Helper::ResponseData($data,$message,true,200);
+    }
+
+    public function ReservationDetails($reservation_id){
+        $reservation = $this->reservation->where('uuid',$reservation_id)->where('user_id',Auth::guard('api')->user()->uuid)->first();
+        if(!$reservation){
+            request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+            $language == 'en' ? $message = 'reservation not found' : $message = 'لم يتم العثور على الحجز';
+            return Helper::ResponseData(null,$message,false,404);
+        }
+       
+        request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+        $language == 'en' ? $message = "The operation succeeded in showing the car reservation" : $message = 'نجحت العملية في عرض حجز السيارة';
+
+        return Helper::ResponseData(new ReservationResource($reservation),$message,true,200);
+       
     }
 
 

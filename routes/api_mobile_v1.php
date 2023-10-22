@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('auth')->group(function(){
     Route::get('nationalities','AuthController@getAllNationalities');
     Route::post('login','AuthController@Login');
+    Route::post('socialLogin','AuthController@SocialLogin');
     Route::post('register','AuthController@Register');
     Route::post('sendVerificationCode','AuthController@SendVerificationCode');
     Route::post('activeAccount','AuthController@ActiveAccount');
@@ -21,6 +22,13 @@ Route::prefix('uploads')->group(function(){
 
 Route::prefix('profile')->group(function(){
     Route::get('/','ProfileController@Profile');
+    Route::prefix('reservation')->group(function(){
+        Route::get('/pending','ProfileController@GetPendingReservations');
+        Route::get('/ongoing','ProfileController@GetOngoingReservations');
+        Route::get('/completed','ProfileController@GetCompletedReservations');
+        Route::get('/cancelled','ProfileController@GetCancelledReservations');
+        Route::post('/','ProfileController@ReservationDetails');
+    });
     Route::put('/','ProfileController@UpdateProfile');  
     Route::put('/firebaseToken','ProfileController@UpdateFirebaseToken');  
     Route::put('/language','ProfileController@UpdateLanguage');  
@@ -50,6 +58,9 @@ Route::prefix('home')->group(function(){
 
 Route::prefix('cars')->group(function(){
     Route::get('/','HomeController@getAllCars');
+    Route::post('/','HomeController@getAllCarsByPost');
+    Route::get('/brands','HomeController@getAllHomeBrands');
+    Route::get('/categories','HomeController@getAllHomeCategories');
 
     Route::prefix('filter')->group(function(){
         Route::get('/categories','HomeController@getAllCategoriesWithID');
@@ -64,7 +75,16 @@ Route::prefix('cars')->group(function(){
     Route::get('/details/cars','HomeController@getAllCarDetailsPageCars');
     
 });
-
+Route::prefix('reservation')->group(function(){
+    Route::get('/address','ReservationController@Address');
+    Route::get('/payment','ReservationController@Payments');
+    Route::post('/features','ReservationController@Features');
+    Route::post('/','ReservationController@Reserve');
+    Route::post('/cancel','ReservationController@Cancel');
+    Route::post('/car','ReservationController@CheckCarReservation');
+    Route::post('/fatora','ReservationController@Fatora');
+    
+});
 Route::prefix('aboutus')->group(function(){
     Route::get('/cars','HomeController@getAllAboutUsPageCars');
     

@@ -16,6 +16,7 @@ use App\Http\Resources\frontend\CustomCarResources\ModelYearResource;
 use App\Http\Resources\frontend\CustomCarResources\TransmissionCustomResource;
 use App\Http\Resources\frontend\filter\CarCategoryFilterResource;
 use App\Models\Car;
+use App\Models\CarAdditionalFeatures;
 use App\Models\CarBrand;
 use App\Models\CarCategory;
 use App\Models\CarColor;
@@ -25,6 +26,8 @@ use App\Models\FuelType;
 use App\Models\ModelYear;
 use App\Models\Transmission;
 use Exception;
+use App\Models\Reservation;
+
 use Illuminate\Database\Eloquent\Builder;
 
 class HomeRepo implements HomeInterface
@@ -44,6 +47,7 @@ class HomeRepo implements HomeInterface
     public $carFeatures;
     public $carAdditionalFeatures;
     public $carHasColors;
+    public $reservation;
     public function __construct()
     {
         $this->car = new Car();
@@ -55,6 +59,8 @@ class HomeRepo implements HomeInterface
         $this->transmission = new Transmission();
         $this->feature = new Feature();
         $this->color = new CarColor();
+        $this->carAdditionalFeatures = new CarAdditionalFeatures();
+        $this->reservation = new Reservation();
     }
     public function getAllCategories(){
         
@@ -186,7 +192,19 @@ class HomeRepo implements HomeInterface
         $language == 'en' ? $message = 'The process succeeded in reaching all colors of cars' : $message = 'نجحت العملية في الوصول إلى كافة الوان السيارات ';
         return Helper::ResponseData(CarColorCustomResource::collection($color),$message,true,200);
     }
-    public function getAllCars($id,$price,$brand,$model,$year,$category,$color,$fuel_type,$features,$passengers,$luggae,$transmission){
+    function dateDiffInDays($date1, $date2) 
+    {
+        $diff = strtotime($date2) - strtotime($date1);
+        if(is_integer(abs($diff / 86400))){
+            return abs($diff / 86400);
+        } else{
+            $number = explode(('.'),abs($diff / 86400));
+            return (int)$number[0] + 1;
+
+        }
+    }
+
+    public function getAllCars($id,$start_date,$return_date,$price,$brand,$model,$year,$category,$color,$fuel_type,$features,$passengers,$luggae,$transmission){
         if($id != null){
             $car = $this->car->where('uuid',$id)->first();
             if(!$car){
@@ -205,12 +223,40 @@ class HomeRepo implements HomeInterface
             
         }
         else{
+            if($start_date == null || $return_date == null){
+                $dateDiffInDays = 1;
+            }else{
+                $dateDiffInDays = $this->dateDiffInDays($start_date,$return_date);
+            }
+            
             $car = $this->car;
             if($price != null){
-                $car = $car->where(function(Builder $query) use($price){
-                    $query->whereBetween('daily_after_discount',$price)->orWhereBetween('weekly_after_discount',$price)->orWhereBetween('monthly_after_discount',$price);
-                   
-                });
+                if($dateDiffInDays < 7){ 
+                    $car = $car->where(function(Builder $query) use($price,$dateDiffInDays){
+                        $query->whereBetween('daily_after_discount',[(doubleval($price[0])/$dateDiffInDays),(doubleval($price[1])/$dateDiffInDays)]);
+                    });
+                }
+                else if($dateDiffInDays >= 7 && $dateDiffInDays < 30 ){
+                    $car = $car->where(function(Builder $query) use($price,$dateDiffInDays){
+                        $query->whereBetween('weekly_after_discount',[(doubleval($price[0])/$dateDiffInDays),(doubleval($price[1])/$dateDiffInDays)]);
+                    });
+                }
+                else if($dateDiffInDays >= 30 && $dateDiffInDays < 365 ){
+                    $car = $car->where(function(Builder $query) use($price,$dateDiffInDays){
+                        $query->whereBetween('monthly_after_discount',[(doubleval($price[0])/$dateDiffInDays),(doubleval($price[1])/$dateDiffInDays)]);
+                    });
+                }
+                else if($dateDiffInDays >= 365){
+                    $car = $car->where(function(Builder $query) use($price,$dateDiffInDays){
+                        $query->whereBetween('yearly_after_discount',[(doubleval($price[0])/$dateDiffInDays),(doubleval($price[1])/$dateDiffInDays)]);
+                    });
+                }
+                else{
+                    $car = $car->where(function(Builder $query) use($price){
+                        $query->whereBetween('daily_after_discount',[(doubleval($price[0])/1),(doubleval($price[1])/1)]);
+                    });
+                }
+                
             }
             if($passengers != null){
                 $car = $car->where(function(Builder $query) use($passengers){
@@ -242,7 +288,6 @@ class HomeRepo implements HomeInterface
                 });
                 
             }
-    
             if($year != null){
                 $car = $car->where(function(Builder $query) use($year){
                     $query->whereHas('ModelYear',function(Builder $query) use($year){
@@ -252,7 +297,6 @@ class HomeRepo implements HomeInterface
                 });
                 
             }
-    
             if($category != null){
                 $car = $car->where(function(Builder $query) use($category){
                     $query->whereHas('Category',function(Builder $query) use($category){
@@ -262,7 +306,6 @@ class HomeRepo implements HomeInterface
                 });
                 
             }
-
             if($transmission != null){
                 $car = $car->where(function(Builder $query) use($transmission){
                     $query->whereHas('Transmission',function(Builder $query) use($transmission){
@@ -272,7 +315,6 @@ class HomeRepo implements HomeInterface
                 });
                 
             }
-    
             if($fuel_type != null){
                 $car = $car->where(function(Builder $query) use($fuel_type){
                     $query->whereHas('FuelType',function(Builder $query) use($fuel_type){
@@ -282,7 +324,6 @@ class HomeRepo implements HomeInterface
                 });
                 
             }
-    
             if($color != null){
                 $car = $car->where(function(Builder $query) use($color){
                     $query->whereHas('Colors',function(Builder $query) use($color){
@@ -294,27 +335,68 @@ class HomeRepo implements HomeInterface
                 });
                 
             }
-    
             if($features != null){
                 $car = $car->where(function(Builder $query) use($features){
-                    $query->whereHas('AdditionalFeatures',function(Builder $query) use($features){
-                        $query->whereIn('uuid',$features);
+                    $query->whereHas('Features',function(Builder $query) use($features){
+                        $query->whereHas('Feature', function(Builder $query) use($features){
+                            $query->whereIn('uuid',$features);
+                        });
                     });
                    
                 });
                 
             }
-           
+            // $car = $car->latest()->paginate(4);
+            if($start_date == null || $return_date == null){
+                $new_cars = $car->latest()->paginate(4);
+            }else{
+                $cars = $car->latest()->get();
+                $push_cars = [];
+                foreach ($cars as $car) {
+                    $query = $this->reservation->where(function(Builder $query) use($start_date,$return_date){
+                        $query->where(function(Builder $query) use($start_date,$return_date){
+                            $query->where('pickup', '==', $start_date)->where('return', '==', $return_date);
+                        })
+                        ->orWhere(function(Builder $query) use($start_date,$return_date){
+                            $query->where('pickup', '<=', $start_date)->where('return', '>=', $return_date);
+                        })
+                        ->orWhere(function(Builder $query) use($start_date,$return_date){
+                            $query->where('pickup', '>=', $start_date)->where('return', '>=', $return_date)->where('pickup', '<=', $return_date);
+                        })
+                        ->orWhere(function(Builder $query) use($start_date,$return_date){
+                            $query->where('pickup', '<=', $start_date)->where('return', '<=', $return_date)->where('return', '>=',$start_date);
+                        });
+                    
             
-            $car = $car->latest()->paginate(4);
+                    })
+                    ->where('status','!=','Cancelled');
+                    
+            
+                    $reservation = $query->first();
+                    $reservation_count = $query->count();
+                    if(!$reservation){
+                        array_push($push_cars,$car->uuid);
+                    }else{
+                        $carColors = 0;
+                        foreach ($car->Colors as $color) {
+                            $carColors = $carColors + $color->total;
+                        }
+                        if($carColors != $reservation_count){
+                            array_push($push_cars,$car->uuid);
+                        }
+                    }
+                }
+                $new_cars = $this->car->whereIn('uuid',$push_cars)->latest()->paginate(4);
+            }
+            
             $data = [
-                'Cars' => CarResource::collection($car),
+                'Cars' => CarResource::collection($new_cars),
                 'Pagination' => [
-                    'total'       => $car->total(),
-                    'count'       => $car->count(),
-                    'perPage'     => $car->perPage(),
-                    'currentPage' => $car->currentPage(),
-                    'totalPages'  => $car->lastPage()
+                    'total'       => $new_cars->total(),
+                    'count'       => $new_cars->count(),
+                    'perPage'     => $new_cars->perPage(),
+                    'currentPage' => $new_cars->currentPage(),
+                    'totalPages'  => $new_cars->lastPage()
                 ]
             ];
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
