@@ -22,7 +22,7 @@ class HomeCarBrandResource extends JsonResource
         return [
             'id' => $this->uuid,
             'name' => $language == 'ar' ? $this->name_ar : $this->name_en,
-            'Cars' => count($this->Cars),
+            'Cars' => count($this->Cars->where('active',true)),
             'image' => $this->image
         ];
     }

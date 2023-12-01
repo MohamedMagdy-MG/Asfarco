@@ -9,6 +9,7 @@ use App\Http\Requests\dashboard\BranchEmployees\ActiveBranchEmployeesRequest;
 use App\Http\Requests\dashboard\BranchEmployees\AddBranchEmployeesRequest;
 use App\Http\Requests\dashboard\BranchEmployees\DeleteBranchEmployeesRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -51,7 +52,7 @@ class BranchEmployeeController extends Controller
                 'gender' => $request->gender,
                 'email' => $request->email,
                 'image' => $request->image,
-                'branch' => $request->branch
+                'branch' => Auth::guard('dashboard')->user()->role == 'Branch Manager' ? Auth::guard('dashboard')->user()->branch_id : $request->branch
             ];
             
             return $this->branchEmployeeRepo->Add($data);

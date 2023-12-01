@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Reservation;
-
+use App\Models\User;
 
 class ProfileRepo implements ProfileInterface
 {
@@ -38,6 +38,7 @@ class ProfileRepo implements ProfileInterface
     public $carFavourites;
     public $userAddress;
     public $car;
+    public $user;
     public $reservation;
     public function __construct()
     {
@@ -48,6 +49,7 @@ class ProfileRepo implements ProfileInterface
         $this->userAddress = new UserAddress();
         $this->carFavourites = new CarFavourites();
         $this->car = new Car();
+        $this->user = new User();
         $this->reservation = new Reservation();
 
     }
@@ -63,12 +65,14 @@ class ProfileRepo implements ProfileInterface
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
-                'Nationality' => $language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en,
+                'register_type' => Auth::guard('api')->user()->register_type,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
-            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address)
-           
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
         ],$message,true,200);
     }
 
@@ -95,7 +99,7 @@ class ProfileRepo implements ProfileInterface
                 request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
                 $language == 'en' ? $message = 'Nationality Not Found' : $message = 'الجنسية غير موجودة';
                 return Helper::ResponseData(null,$message,false,400,[
-                    'nationality_id' => $message
+                    'nationality_id' => [$message]
                 ]);
             }
             $savedData['country_id'] = $country->id;
@@ -113,32 +117,50 @@ class ProfileRepo implements ProfileInterface
                     'user_id' => Auth::guard('api')->user()->uuid
                 ]);
             }
+            
+            $notification_data = [
+                'model' => 'Verification',
+                'title_en' => 'Asfarco - Attach new files',
+                'title_ar' => 'اسفاركو - ارفاق ملفات جديدة',
+                'message_en' => 'A new client named '.Auth::guard('api')->user()->name.' has been attach new files',
+                'message_ar' => 'تم ارفاق ملفات جديدة من عميل اسمه '.Auth::guard('api')->user()->name,
+            ];
+            Helper::sendNotifyToDashboard($notification_data);
+
+            Auth::guard('api')->user()->update([
+                'verify_document' => false,
+                'verify_document_at' => null,
+            ]);
 
             
         }
-
-        if(is_array($data['Documents']) && count($data['Documents']) > 0 && $data['gender'] != null && $data['mobile'] != null && $$data['nationality'] != null){
+        if(is_array($data['Documents']) && count($data['Documents']) > 0 && $data['gender'] != null && $data['mobile'] != null && $data['nationality'] != null){
             Auth::guard('api')->user()->update([
                 'social_login' => true
             ]);
         }
-        
+
         
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $language == 'en' ? $message = 'Profile data has been updated successfully' : $message = 'تم تحديث بيانات الملف الشخصي بنجاح';
+
+        $user = $this->user->where('uuid',Auth::guard('api')->user()->uuid)->first();
+        
         return Helper::ResponseData([
             'PersonalInformation' => [
-                'name' => Auth::guard('api')->user()->name,
-                'email' => Auth::guard('api')->user()->email,
-                'mobile' => Auth::guard('api')->user()->mobile,
-                'gender' => Auth::guard('api')->user()->gender,
-                'image' => Auth::guard('api')->user()->image,
-                'Nationality' => $language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en,
-                'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'name' => $user->name,
+                'email' => $user->email,
+                'mobile' => $user->mobile,
+                'gender' => $user->gender,
+                'image' => $user->image,
+                'register_type' => $user->register_type,
+                'Nationality' => $user->Country != null ? ($language == 'ar' ? $user->Country->nationality_ar : $user->Country->nationality_en) : null,
+                'Documents' => DocumentResource::collection($user->Documents),
+                'canReserve' => $user->verify_document == true ? 1 : 0,
             ],
-            'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
-            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address)
-           
+            'SavedPayments' => PaymentResource::collection($user->Payments),
+            'Address' => AddressResource::collection($user->Address),
+            'social_login' => $user->social_login,
         ],$message,true,200);
     }
 
@@ -190,7 +212,7 @@ class ProfileRepo implements ProfileInterface
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'The current password is incorrect' : $message = 'كلمة المرور الحالية غير صحيحة';
             return Helper::ResponseData(null,$message,false,400,[
-                'current_password' => $message
+                'current_password' => [$message]
             ]);
         }
 
@@ -198,7 +220,7 @@ class ProfileRepo implements ProfileInterface
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'The current password cannot be used' : $message = 'لا يمكن استخدام كلمة المرور الحالية';
             return Helper::ResponseData(null,$message,false,400,[
-                'new_password' => $message
+                'new_password' => [$message]
             ]);
         }
         
@@ -216,12 +238,14 @@ class ProfileRepo implements ProfileInterface
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
-                'Nationality' => $language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en,
+                'register_type' => Auth::guard('api')->user()->register_type,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
-            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address)
-            
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
         ],$message,true,200);
 
        
@@ -233,7 +257,7 @@ class ProfileRepo implements ProfileInterface
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'City Not Found' : $message = 'المدينة غير موجودة';
             return Helper::ResponseData(null,$message,false,400,[
-                'city' => $message
+                'city' => [$message]
             ]);
         }
 
@@ -247,6 +271,7 @@ class ProfileRepo implements ProfileInterface
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $language == 'en' ? $message = 'The payment card has been created successfully' : $message = 'تم إنشاء بطاقة الدفع بنجاح';
 
+        
         return Helper::ResponseData([
             'PersonalInformation' => [
                 'name' => Auth::guard('api')->user()->name,
@@ -254,12 +279,14 @@ class ProfileRepo implements ProfileInterface
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
-                'Nationality' => $language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en,
+                'register_type' => Auth::guard('api')->user()->register_type,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
-            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address)
-            
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
         ],$message,true,200);
 
 
@@ -283,7 +310,7 @@ class ProfileRepo implements ProfileInterface
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'City Not Found' : $message = 'المدينة غير موجودة';
             return Helper::ResponseData(null,$message,false,400,[
-                'city_id' => $message
+                'city_id' => [$message]
             ]);
         }
 
@@ -303,12 +330,14 @@ class ProfileRepo implements ProfileInterface
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
-                'Nationality' => $language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en,
+                'register_type' => Auth::guard('api')->user()->register_type,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
-            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address)
-            
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
         ],$message,true,200);
 
         
@@ -336,14 +365,15 @@ class ProfileRepo implements ProfileInterface
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
-                'Nationality' => $language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en,
+                'register_type' => Auth::guard('api')->user()->register_type,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
-            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address)
-            
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
         ],$message,true,200);
-
         
 
     }
@@ -459,7 +489,7 @@ class ProfileRepo implements ProfileInterface
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Your payment card has expired' : $message = 'لقد انتهت صلاحية بطاقة الدفع الخاصة بك';
             return Helper::ResponseData(null,$message,false,400,[
-                'number' => $message
+                'number' => [$message]
             ]);
     
         }
@@ -468,7 +498,7 @@ class ProfileRepo implements ProfileInterface
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Payment card data is not recognized' : $message = 'لم يتم التعرف على بيانات بطاقة الدفع';
             return Helper::ResponseData(null,$message,false,400,[
-                'number' => $message
+                'number' => [$message]
             ]);
     
         }
@@ -494,12 +524,14 @@ class ProfileRepo implements ProfileInterface
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
-                'Nationality' => $language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en,
+                'register_type' => Auth::guard('api')->user()->register_type,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
-            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address)
-            
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
         ],$message,true,200);
 
 
@@ -525,7 +557,7 @@ class ProfileRepo implements ProfileInterface
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Your payment card has expired' : $message = 'لقد انتهت صلاحية بطاقة الدفع الخاصة بك';
             return Helper::ResponseData(null,$message,false,400,[
-                'number' => $message
+                'number' => [$message]
             ]);
     
         }
@@ -534,7 +566,7 @@ class ProfileRepo implements ProfileInterface
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Payment card data is not recognized' : $message = 'لم يتم التعرف على بيانات بطاقة الدفع';
             return Helper::ResponseData(null,$message,false,400,[
-                'number' => $message
+                'number' => [$message]
             ]);
     
         }
@@ -561,12 +593,14 @@ class ProfileRepo implements ProfileInterface
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
-                'Nationality' => $language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en,
+                'register_type' => Auth::guard('api')->user()->register_type,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
-            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address)
-            
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
         ],$message,true,200);
 
 
@@ -596,12 +630,14 @@ class ProfileRepo implements ProfileInterface
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
-                'Nationality' => $language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en,
+                'register_type' => Auth::guard('api')->user()->register_type,
+                'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
-            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address)
-            
+            'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
+            'social_login' => Auth::guard('api')->user()->social_login,
         ],$message,true,200);
 
         
@@ -610,7 +646,7 @@ class ProfileRepo implements ProfileInterface
 
     public function Favourite($id){ 
         
-        $car = $this->car->where('uuid',$id)->first();
+        $car = $this->car->where('active',true)->where('uuid',$id)->first();
         if(!$car){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Car Not Found' : $message = 'لم يتم العثور على السيارة';
@@ -642,7 +678,7 @@ class ProfileRepo implements ProfileInterface
 
     public function GetFavourites(){
         
-        $car = $this->car->whereHas('Favourites',function(Builder $query){
+        $car = $this->car->where('active',true)->whereHas('Favourites',function(Builder $query){
             $query->where('user_id',Auth::guard('api')->user()->uuid);
         });
         
@@ -759,8 +795,6 @@ class ProfileRepo implements ProfileInterface
         return Helper::ResponseData(new ReservationResource($reservation),$message,true,200);
        
     }
-
-
 
     
 

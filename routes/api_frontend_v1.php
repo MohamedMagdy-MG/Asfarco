@@ -84,8 +84,35 @@ Route::prefix('cars')->group(function(){
     
 });
 
+Route::prefix('questions')->group(function(){
+    Route::get('/','QuestionController@getAllQuestions');
+    Route::get('/data','QuestionController@getAllQuestionsWithData');
+    
+});
+
+Route::prefix('homeAdsOne')->group(function(){
+    Route::get('/','HomeAdsOneController@ShowAds');
+});
+
+Route::prefix('homeAdsTwo')->group(function(){
+    Route::get('/','HomeAdsTwoController@ShowAds');
+});
+
+Route::prefix('aboutAds')->group(function(){
+    Route::get('/','AboutAdsController@ShowAds');
+});
+
+Route::prefix('fleetAds')->group(function(){
+    Route::get('/','FleetAdsController@ShowAds');
+});
+
+Route::prefix('header')->group(function(){
+    Route::get('/','HeaderController@ShowHeader');
+});
+
 Route::prefix('aboutus')->group(function(){
     Route::get('/cars','HomeController@getAllAboutUsPageCars');
+    Route::get('/branches','HomeController@getAllBranches');
     
 });
 

@@ -37,7 +37,7 @@ class BranchController extends Controller
 
     public function Add(Request $request)
     {
-        $validator = Validator::make($request->only(['name_en','name_ar','address_en','address_ar','longitude','latitude','city_id']),AddBranchRequest::rules(),AddBranchRequest::Message());
+        $validator = Validator::make($request->only(['name_en','name_ar','address_en','address_ar','longitude','latitude','city_id','mobile']),AddBranchRequest::rules(),AddBranchRequest::Message());
         if($validator->fails()){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Add Branch Operation Failed' : $message = 'فشلت عملية اضافة الفرع';
@@ -51,7 +51,8 @@ class BranchController extends Controller
                 'address_ar' => $request->address_ar,
                 'longitude' => $request->longitude,
                 'latitude' => $request->latitude,
-                'city_id' => $request->city_id
+                'city_id' => $request->city_id,
+                'mobile' => $request->mobile
             ];
             
             return $this->branchRepo->Add($data);
@@ -61,7 +62,7 @@ class BranchController extends Controller
 
     public function Update(Request $request)
     {
-        $validator = Validator::make($request->only(['id','name_en','name_ar','address_en','address_ar','longitude','latitude','city_id']),UpdateBranchRequest::rules(),UpdateBranchRequest::Message());
+        $validator = Validator::make($request->only(['id','name_en','name_ar','address_en','address_ar','longitude','latitude','city_id','mobile']),UpdateBranchRequest::rules(),UpdateBranchRequest::Message());
         if($validator->fails()){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Edit Branch Information Operation Failed' : $message = 'فشلت عملية تعديل بيانات الفرع';
@@ -76,7 +77,8 @@ class BranchController extends Controller
                 'address_ar' => $request->address_ar,
                 'longitude' => $request->longitude,
                 'latitude' => $request->latitude,
-                'city_id' => $request->city_id
+                'city_id' => $request->city_id,
+                'mobile' => $request->mobile
             ];
             
             return $this->branchRepo->Update($data);

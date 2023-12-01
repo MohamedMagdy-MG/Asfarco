@@ -40,6 +40,7 @@ class BranchRepo implements BranchInterface
                 $query->where('name_en','LIKE','%'.$search.'%')
                 ->orWhere('name_ar','LIKE','%'.$search.'%')
                 ->orWhere('gender',$search)
+                ->orWhere('mobile',$search)
                 ->orWhere('email',$search);
             });
             
@@ -86,7 +87,8 @@ class BranchRepo implements BranchInterface
             'address_ar' => $data['address_ar'],
             'longitude' => $data['longitude'],
             'latitude' => $data['latitude'],
-            'city_id' => $data['city_id']
+            'city_id' => $data['city_id'],
+            'mobile' => $data['mobile']
         ];
         $this->branch->create($branchData);
        
@@ -126,7 +128,8 @@ class BranchRepo implements BranchInterface
             'address_ar' => $data['address_ar'],
             'longitude' => $data['longitude'],
             'latitude' => $data['latitude'],
-            'city_id' => $data['city_id']
+            'city_id' => $data['city_id'],
+            'mobile' => $data['mobile']
         ];
         $branch->update($branchData);
        

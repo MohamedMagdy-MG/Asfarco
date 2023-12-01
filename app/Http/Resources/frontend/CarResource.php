@@ -86,7 +86,7 @@ class CarResource extends JsonResource
 
 
         $favourite = false;
-        if (Auth::check()) {
+        if (Auth::guard('api')->user() != null) {
             if(CarFavourites::where('car_id',$this->uuid)->where('user_id',Auth::guard('api')->user()->uuid)->first()){
                 $favourite = true;
             }

@@ -22,11 +22,10 @@ class UserRepo implements UserInterface
 
     public function getAllPendingUsers($search){
         
-        $users = $this->user->where('verify_document',false)->where('verify_document_at','==',null)->where('email_verified_at','!=',null)->where('Verify_at','!=',null);
+        $users = $this->user->where('verify_document',false)->where('verify_document_at',null)->where('email_verified_at','!=',null)->whereHas('Documents')->where('active',true);
         if($search != null){
             $users = $users->where(function(Builder $query) use($search){
-                $query->where('name_en','LIKE','%'.$search.'%')
-                ->orWhere('name_ar','LIKE','%'.$search.'%')
+                $query->where('name','LIKE','%'.$search.'%')
                 ->orWhere('email',$search);
             });
             
@@ -50,11 +49,10 @@ class UserRepo implements UserInterface
 
     public function getAllDeactiveUsers($search){
         
-        $users = $this->user->where('active',false)->where('email_verified_at','!=',null)->where('Verify_at','!=',null)->where('verify_document',true)->where('verify_document_at','!=',null);
+        $users = $this->user->where('active',false)->where('email_verified_at','!=',null);
         if($search != null){
             $users = $users->where(function(Builder $query) use($search){
-                $query->where('name_en','LIKE','%'.$search.'%')
-                ->orWhere('name_ar','LIKE','%'.$search.'%')
+                $query->where('name','LIKE','%'.$search.'%')
                 ->orWhere('email',$search);
             });
             
@@ -78,11 +76,10 @@ class UserRepo implements UserInterface
 
     public function getAllUnVerificationsUsers($search){
         
-        $users = $this->user->where('email_verified_at','==',null)->where('Verify_at','==',null)->where('verify_document',false)->where('verify_document_at','==',null);
+        $users = $this->user->where('email_verified_at',null);
         if($search != null){
             $users = $users->where(function(Builder $query) use($search){
-                $query->where('name_en','LIKE','%'.$search.'%')
-                ->orWhere('name_ar','LIKE','%'.$search.'%')
+                $query->where('name','LIKE','%'.$search.'%')
                 ->orWhere('email',$search);
             });
             
@@ -106,11 +103,10 @@ class UserRepo implements UserInterface
 
     public function getAllActiveUsers($search){
         
-        $users = $this->user->where('active',true)->where('email_verified_at','!=',null)->where('Verify_at','!=',null)->where('verify_document',true)->where('verify_document_at','!=',null);
+        $users = $this->user->where('active',true)->where('email_verified_at','!=',null)->where('verify_document',true)->where('verify_document_at','!=',null);
         if($search != null){
             $users = $users->where(function(Builder $query) use($search){
-                $query->where('name_en','LIKE','%'.$search.'%')
-                ->orWhere('name_ar','LIKE','%'.$search.'%')
+                $query->where('name','LIKE','%'.$search.'%')
                 ->orWhere('email',$search);
             });
             

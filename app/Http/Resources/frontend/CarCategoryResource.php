@@ -20,8 +20,10 @@ class CarCategoryResource extends JsonResource
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
 
         return [
+            'id' => $this->uuid,
             'name' => $language == 'ar' ? $this->name_ar : $this->name_en,
-            'image' => $this->image
+            'image' => $this->image,
+            
         ];
     }
 }

@@ -94,6 +94,7 @@ class CarDetailsResource extends JsonResource
             'id' => $this->uuid,
             'name' => $language == 'ar' ? $this->name_ar : $this->name_en,
             'description_' => $language == 'ar' ? $this->description_ar : $this->description_en,
+            'description_two' => $language == 'ar' ? $this->description_two_ar : $this->description_two_en,
             'Images' => CarImagesResource::collection($this->Images),
             'CarColors' => CarHasColorsResource::collection($this->Colors),
             'CarSpecs' => [

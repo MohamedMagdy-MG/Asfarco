@@ -23,7 +23,7 @@ class HomeCarCategoryResource extends JsonResource
             'id' => $this->uuid,
             'name' => $language == 'ar' ? $this->name_ar : $this->name_en,
             'image' => $this->image,
-            'Cars' => count($this->Cars)
+            'Cars' => count($this->Cars->where('active',true))
         ];
     }
 }

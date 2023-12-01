@@ -59,7 +59,7 @@ class AuthRepo implements AuthInterface{
         return Helper::ResponseData(NationalityResource::collection($nationalities),$message,true,200);
     }
     public function SocialLogin($data = []){
-        $user = $this->user->where('email',$data['email'])->where('register_type',$data['login_type'])->first();
+        $user = $this->user->where('email',$data['email'])->first();
         if(!$user){
             $user = $this->user->create([
                 'name' => $data['name'],
@@ -68,16 +68,35 @@ class AuthRepo implements AuthInterface{
                 'password' => Hash::make($data['name'].'Asfarco'),
                 'register_type' => $data['login_type'],
                 'otp' => null,
+                'active' => true,
                 'Verify_at' => null,
                 'email_verified_at' => Carbon::now(new DateTimeZone('Asia/Dubai')),
                 'social_login' => false,
             ]);
+
+            //Notification
+            $notification_data = [
+                'model' => 'Registeration',
+                'title_en' => 'Asfarco - Registeration',
+                'title_ar' => 'اسفاركو - التسجيل',
+                'message_en' => 'A new client named '.$data['name'].' has been registered',
+                'message_ar' => 'تم تسجيل عميل جديد اسمه '.$data['name'],
+            ];
+            Helper::sendNotifyToDashboard($notification_data);
+
         }else{
-            $user->update([
-                'name' => $data['name'],
-                'image' => $data['image'], 
-                'password' => Hash::make($data['name'].'Asfarco'),
-            ]);
+            if($user->register_type == 'Email'){
+                $user->update([
+                    'name' => $data['name'],
+                    'image' => $data['image'], 
+                ]);
+            }else{
+                $user->update([
+                    'name' => $data['name'],
+                    'image' => $data['image'], 
+                    'password' => Hash::make($data['name'].'Asfarco'),
+                ]);
+            }
         }
         $token = Auth::guard('api')->login($user);
         if (!$token) {
@@ -91,7 +110,7 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Your account is suspended, please contact system support' : $message = 'تم تعليق حسابك، يرجى الاتصال بدعم النظام';
             return Helper::ResponseData(null,$message,false, 400,[
-                'email-suspended' => $message
+                'email-suspended' => [$message]
             ]);
         }
 
@@ -99,16 +118,13 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'please verify your email address to activate your account' : $message = 'يرجى التحقق من عنوان بريدك الإلكتروني لتفعيل حسابك';
             return Helper::ResponseData(null,$message,false, 400,[
-                'email-verify' => $message
+                'email-verify' => [$message]
             ]);
         }
         
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $language == 'en' ? $message = 'you have logged in successfully' : $message = 'لقد قمت بتسجيل الدخول بنجاح';
         return Helper::ResponseData([
-            // 'name' => Auth::guard('api')->user()->name,
-            // 'email' => Auth::guard('api')->user()->email,
-            // 'image' => Auth::guard('api')->user()->image,
             'token' => $token,
             'PersonalInformation' => [
                 'name' => Auth::guard('api')->user()->name,
@@ -116,12 +132,14 @@ class AuthRepo implements AuthInterface{
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
+                'register_type' => Auth::guard('api')->user()->register_type,
                 'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
             'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
-            'social_login' => Auth::guard('api')->user()->social_login,
+            'social_login' => Auth::guard('api')->user()->social_login == true ? 1 : 0,
             
         ],$message,true,200);
     }
@@ -140,7 +158,7 @@ class AuthRepo implements AuthInterface{
                 request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
                 $language == 'en' ? $message = 'Email Address Not Found' : $message = 'عنوان البريد الإلكتروني غير موجود';
                 return Helper::ResponseData(null,$message,false,400,[
-                    'email' => $message
+                    'email' => [$message]
                 ]);
             }
             $token = Auth::guard('api')->login($user);
@@ -157,7 +175,7 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Your account is suspended, please contact system support' : $message = 'تم تعليق حسابك، يرجى الاتصال بدعم النظام';
             return Helper::ResponseData(null,$message,false, 400,[
-                'email-suspended' => $message
+                'email-suspended' => [$message]
             ]);
         }
 
@@ -165,7 +183,7 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'please verify your email address to activate your account' : $message = 'يرجى التحقق من عنوان بريدك الإلكتروني لتفعيل حسابك';
             return Helper::ResponseData(null,$message,false, 400,[
-                'email-verify' => $message
+                'email-verify' => [$message]
             ]);
         }
         
@@ -179,25 +197,27 @@ class AuthRepo implements AuthInterface{
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
+                'register_type' => Auth::guard('api')->user()->register_type,
                 'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
             'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
-            'social_login' => Auth::guard('api')->user()->social_login,
+            'social_login' => Auth::guard('api')->user()->social_login == true ? 1 : 0,
             
         ],$message,true,200);
     }
 
     public function Register($data = []){
-        try{
+        
 
             $country = $this->country->where('nationality_en',$data['nationality'])->orWhere('nationality_ar',$data['nationality'])->first();
             if(!$country){
                 request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
                 $language == 'en' ? $message = 'Nationality Not Found' : $message = 'الجنسية غير موجودة';
                 return Helper::ResponseData(null,$message,false,400,[
-                    'nationality' => $message
+                    'nationality' => [$message]
                 ]);
             }
 
@@ -251,24 +271,36 @@ class AuthRepo implements AuthInterface{
                     ]);
                 }
             }
+            try{
+                Mail::to($sendData['email'])->send(new activeAccount($sendData));
+            }
+            catch(Exception $ex){
+                $user->forceDelete();
+                request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+                $language == 'en' ? $message = 'Email field is invalid' : $message = 'حقل البريد الإلكتروني غير صالح';
+                return Helper::ResponseData(null,$message,false,400,[
+                    'email' => [$message]
+                ]);
+            }
 
-            Mail::to($sendData['email'])->send(new activeAccount($sendData));
+             //Notification
+            $notification_data = [
+                'model' => 'Registeration',
+                'title_en' => 'Asfarco - Registeration',
+                'title_ar' => 'اسفاركو - التسجيل',
+                'message_en' => 'A new client named '.$data['name'].' has been registered',
+                'message_ar' => 'تم تسجيل عميل جديد اسمه '.$data['name'],
+            ];
+            Helper::sendNotifyToDashboard($notification_data);
 
-            
+
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Account registration was successful, please check your mail to activate your account' : $message = 'تم تسجيل الحساب بنجاح، يرجى التحقق من بريدك لتفعيل حسابك';
             return Helper::ResponseData([
                 'email' => $user->email,
                 
             ],$message,true,200);
-        }
-        catch(Exception $ex){
-            request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
-            $language == 'en' ? $message = 'Nationality Not Found' : $message = 'الجنسية غير موجودة';
-            return Helper::ResponseData(null,$message,false,400,[
-                'nationality' => $message
-            ]);
-        }
+       
     }
 
     public function SendVerificationCode($data)
@@ -280,7 +312,7 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Email Address Not Found' : $message = 'عنوان البريد الإلكتروني غير موجود';
             return Helper::ResponseData(null,$message,false, 400,[
-                'email' => $message
+                'email' => [$message]
             ]);
         }
 
@@ -294,9 +326,17 @@ class AuthRepo implements AuthInterface{
             'otp' => $otp,
             'Verify_at' => Carbon::now(new DateTimeZone('Asia/Dubai'))->addMinutes(2)
         ]);
-
-        Mail::to($sendData['email'])->send(new activeAccount($sendData));
-
+        try{
+            Mail::to($sendData['email'])->send(new activeAccount($sendData));
+        }
+        catch(Exception $ex){
+            $user->forceDelete();
+            request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+            $language == 'en' ? $message = 'Email field is invalid' : $message = 'حقل البريد الإلكتروني غير صالح';
+            return Helper::ResponseData(null,$message,false,400,[
+                'email' => [$message]
+            ]);
+        }
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $language == 'en' ? $message = 'The system sent you an email to activate your account' : $message = 'أرسل لك النظام بريدًا إلكترونيًا لتفعيل حسابك';
         return Helper::ResponseData(null,$message,false, 200);
@@ -311,14 +351,14 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Email Address Not Found' : $message = 'عنوان البريد الإلكتروني غير موجود';
             return Helper::ResponseData(null,$message,false,400,[
-                'email' => $message
+                'email' => [$message]
             ]);
         }
         if($data['otp'] != $user->otp){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'The verification code is invalid' : $message = 'رمز التحقق غير صالح';
             return Helper::ResponseData(null,$message,false,400,[
-                'verification-code-invalid' => $message
+                'verification-code-invalid' => [$message]
             ]);
         }
 
@@ -327,7 +367,7 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'The reset code has expired' : $message = 'انتهت صلاحية رمز إعادة الضبط';
             return Helper::ResponseData(null,$message,false,400,[
-                'reset-code-expired' => $message
+                'reset-code-expired' => [$message]
             ]);
         }
 
@@ -336,7 +376,7 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'The reset code has expired' : $message = 'انتهت صلاحية رمز إعادة الضبط';
             return Helper::ResponseData(null,$message,false,400,[
-                'reset-code-expired' => $message
+                'reset-code-expired' => [$message]
             ]);
         }
 
@@ -350,7 +390,20 @@ class AuthRepo implements AuthInterface{
 
         ]);
 
+       
+
         $token = Auth::guard('api')->login($user);
+
+         //Notification
+         
+        $notification_data = [
+            'model' => 'Verification',
+            'title_en' => 'Asfarco - Activate an account',
+            'title_ar' => 'اسفاركو - تنشيط الحساب',
+            'message_en' => 'A new client named '.Auth::guard('api')->user()->name.' has been verification',
+            'message_ar' => 'تم التحقق من عميل جديد اسمه '.Auth::guard('api')->user()->name,
+        ];
+        Helper::sendNotifyToDashboard($notification_data);
 
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $language == 'en' ? $message = 'The account has been activated successfully' : $message = 'لقد تم تفعيل الحساب بنجاح';
@@ -362,12 +415,14 @@ class AuthRepo implements AuthInterface{
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
+                'register_type' => Auth::guard('api')->user()->register_type,
                 'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
             'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
-            'social_login' => Auth::guard('api')->user()->social_login,
+            'social_login' => Auth::guard('api')->user()->social_login == true ? 1 : 0,
             
         ],$message,true,200);
 
@@ -383,7 +438,7 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Email Address Not Found' : $message = 'عنوان البريد الإلكتروني غير موجود';
             return Helper::ResponseData(null,$message,false, 400,[
-                'email' => $message
+                'email' => [$message]
             ]);
         }
 
@@ -397,9 +452,17 @@ class AuthRepo implements AuthInterface{
             'otp_reset' => $otp,
             'Reset_at' => Carbon::now(new DateTimeZone('Asia/Dubai'))->addMinutes(2)
         ]);
-
-        Mail::to($sendData['email'])->send(new resetPassword($sendData));
-
+        try{
+            Mail::to($sendData['email'])->send(new resetPassword($sendData));
+        }
+        catch(Exception $ex){
+            $user->forceDelete();
+            request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+            $language == 'en' ? $message = 'Email field is invalid' : $message = 'حقل البريد الإلكتروني غير صالح';
+            return Helper::ResponseData(null,$message,false,400,[
+                'email' => [$message]
+            ]);
+        }
         if($user->otp_reset == null){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Your password has been reset successfully, Please check your email' : $message = 'لقد تم إعادة تعيين كلمة المرور الخاصة بك بنجاح، يرجى التحقق من بريدك الإلكتروني';
@@ -421,7 +484,7 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Email Address Not Found' : $message = 'عنوان البريد الإلكتروني غير موجود';
             return Helper::ResponseData(null,$message,false,400,[
-                'email' => $message
+                'email' => [$message]
             ]);
         }
         
@@ -430,7 +493,7 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'The reset code is invalid' : $message = 'رمز إعادة الضبط غير صالح';
             return Helper::ResponseData(null,$message,false,400,[
-                'reset-code-invalid' => $message
+                'reset-code-invalid' => [$message]
             ]);
         }
         
@@ -438,7 +501,7 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'The reset code has expired' : $message = 'انتهت صلاحية رمز إعادة الضبط';
             return Helper::ResponseData(null,$message,false,400,[
-                'reset-code-expired' => $message
+                'reset-code-expired' => [$message]
             ]);
         }
 
@@ -447,7 +510,7 @@ class AuthRepo implements AuthInterface{
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'The reset code has expired' : $message = 'انتهت صلاحية رمز إعادة الضبط';
             return Helper::ResponseData(null,$message,false,400,[
-                'reset-code-expired' => $message
+                'reset-code-expired' => [$message]
             ]);
         }
 
@@ -471,12 +534,14 @@ class AuthRepo implements AuthInterface{
                 'mobile' => Auth::guard('api')->user()->mobile,
                 'gender' => Auth::guard('api')->user()->gender,
                 'image' => Auth::guard('api')->user()->image,
+                'register_type' => Auth::guard('api')->user()->register_type,
                 'Nationality' => Auth::guard('api')->user()->Country != null ? ($language == 'ar' ? Auth::guard('api')->user()->Country->nationality_ar : Auth::guard('api')->user()->Country->nationality_en) : null,
                 'Documents' => DocumentResource::collection(Auth::guard('api')->user()->Documents),
+                'canReserve' => Auth::guard('api')->user()->verify_document
             ],
             'SavedPayments' => PaymentResource::collection(Auth::guard('api')->user()->Payments),
             'Address' => AddressResource::collection(Auth::guard('api')->user()->Address),
-            'social_login' => Auth::guard('api')->user()->social_login,
+            'social_login' => Auth::guard('api')->user()->social_login == true ? 1 : 0,
             
         ],$message,true,200);
 

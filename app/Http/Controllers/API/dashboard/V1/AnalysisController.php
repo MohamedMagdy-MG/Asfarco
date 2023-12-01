@@ -26,6 +26,33 @@ class AnalysisController extends Controller
         return $this->analysisRepo->Cards();
     }
 
+    public function Charts(){
+        $year = null;
+        if(array_key_exists('year',$_GET)){
+            $year = $_GET['year'];
+        }
+        return $this->analysisRepo->Charts($year);
+    
+    }
+
+    public function BranchCharts(){
+        $year = null;
+        if(array_key_exists('year',$_GET)){
+            $year = $_GET['year'];
+        }
+        return $this->analysisRepo->BranchCharts($year);
+    
+    }
+    public function LatestOnGoing(){
+        
+        return $this->analysisRepo->LatestOnGoing();
+    
+    }
+    public function LatestCompleted(){
+        
+        return $this->analysisRepo->LatestCompleted();
+    
+    }
    
 
 

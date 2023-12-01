@@ -41,7 +41,8 @@ class ReservationResource extends JsonResource
         }
         return [
             'id' => $this->uuid,
-            'EstimatedPickupTime' => $language == 'ar' ? $transalte->setSource('en')->setTarget('ar')->translate(date('d M Y - h:i A', strtotime($this->pickup))   ): date('l, d M Y - h:i A', strtotime($this->pickup)),
+            'EstimatedPickupTime' => $language == 'ar' ? $transalte->setSource('en')->setTarget('ar')->translate(date('d/m/Y - h:i A', strtotime($this->pickup))   ): date('l, d/m/Y - h:i A', strtotime($this->pickup)),
+            'CancelledOn' => $this->cancelled_on != null ? $language == 'ar' ? $transalte->setSource('en')->setTarget('ar')->translate(date('d/m/Y - h:i A', strtotime($this->cancelled_on))   ): date('l, d/m/Y - h:i A', strtotime($this->cancelled_on)):null,
             'CarDetails' => [
                 'CoverImage' => count($this->Car->Images) > 0 ? ($this->Car->Images[0] != null ? $this->Car->Images[0]->image : null) : null,
                 'name' => $language == 'ar' ? $this->Car->name_ar : $this->Car->name_en,
@@ -53,6 +54,10 @@ class ReservationResource extends JsonResource
             'ReservationDetails' => [
                 'days' => $this->dateDiffInDays($this->pickup,$this->return),
                 'mode' => $this->mode,
+                'pickup' => $this->pickup,
+                'return' => $this->return,
+                'status' => $this->status
+
             ],
             'PaymentDetails' => [
                 'Features' => $Features,
@@ -73,7 +78,15 @@ class ReservationResource extends JsonResource
             'AdditionalsDetails' => $this->Address != null ? [
                 'address' => $this->Address->address,
                 'City' => $language == 'ar' ? $this->Address->City->name_ar : $this->Address->City->name_en,
-            ]:null
+            ]:(
+                $this->AirportTransfer != null ? [
+                    'address' => $this->AirportTransfer->address,
+                    'City' => $language == 'ar' ? $this->Address->AirportTransfer->name_ar : $this->Address->AirportTransfer->name_en,
+                ]:[
+                    'address' => $language == 'ar' ? $this->Car->Branch->address_ar : $this->Car->Branch->address_en,
+                    'City' => $language == 'ar' ? $this->Car->Branch->City->name_ar : $this->Car->Branch->City->name_en,
+                ]
+            )
             // 'name' => $language == 'ar' ? $this->Car->name_ar : $this->Car->name_en,
             // 'prices' => $this->Price->total,
             // 'pickup' => $this->pickup,

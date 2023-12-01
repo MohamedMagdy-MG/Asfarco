@@ -94,6 +94,115 @@ class HomeRepo implements HomeInterface
 
         return Helper::ResponseData(CarResource::collection($car),$message,true,200);
     }
+
+
+    public function getAllHomePageFilter(){
+        request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+
+        $language == 'ar' ? $carCategory = $this->carCategory->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_ar','asc')->get() : $carCategory = $this->carCategory->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_en','asc')->get();
+
+        $language == 'ar' ? $brand = $this->brand->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_ar','asc')->get() : $brand = $this->brand->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_en','asc')->get();
+
+        $data = [
+            'Categories' => HomeCarCategoryResource::collection($carCategory),
+            'Brands' => HomeCarBrandResource::collection($brand)
+        ];
+
+        $language == 'en' ? $message = 'The process succeeded in reaching all data of Home page' : $message = 'نجحت العملية في الوصول إلى كافة بيانات الصفحة الرئيسية ';
+
+
+        return Helper::ResponseData($data,$message,true,200);
+    }
+
+    public function getAllFilterPage(){
+        request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+        
+        $language == 'ar' ? $carCategory = $this->carCategory->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_ar','asc')->get() : $carCategory = $this->carCategory->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_en','asc')->get();
+
+        $language == 'ar' ? $brand = $this->brand->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_ar','asc')->get() : $brand = $this->brand->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_en','asc')->get();
+
+        $language == 'ar' ? $fuelType = $this->fuelType->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_ar','asc')->get() : $fuelType = $this->fuelType->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_en','asc')->get();
+
+       
+        $language == 'ar' ? $model = $this->model->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_ar','asc')->get() : $model = $this->model->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_en','asc')->get();
+
+        $language == 'ar' ? $fuelType = $this->fuelType->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_ar','asc')->get() : $fuelType = $this->fuelType->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_en','asc')->get();
+
+        $modelYear = $this->modelYear->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('year','asc')->get();
+
+        $language == 'ar' ? $transmission = $this->transmission->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_ar','asc')->get() : $transmission = $this->transmission->whereHas('Cars',function(Builder $query){
+            $query->where('active',true);
+        })->orderBy('name_en','asc')->get();
+
+        $language == 'ar' ? $feature = $this->feature->whereHas('CarFeature',function(Builder $query){
+            $query->whereHas('Car',function(Builder $query){
+                $query->where('active',true);
+            });
+        })->orderBy('name_ar','asc')->get() : $feature = $this->feature->whereHas('CarFeature',function(Builder $query){
+            $query->whereHas('Car',function(Builder $query){
+                $query->where('active',true);
+            });
+        })->orderBy('name_en','asc')->get();
+
+        $language == 'ar' ? $color = $this->color->whereHas('CarHasColors',function(Builder $query){
+            $query->whereHas('Car',function(Builder $query){
+                $query->where('active',true);
+            });
+        })->orderBy('name_ar','asc')->get() : $color = $this->color->whereHas('CarHasColors',function(Builder $query){
+            $query->whereHas('Car',function(Builder $query){
+                $query->where('active',true);
+            });
+        })->orderBy('name_en','asc')->get();
+
+        $data = [
+            'Categories' => CarCategoryResource::collection($carCategory),
+            'Brands' => CarBrandCustomResource::collection($brand),
+            'Models' => CarModelCustomResource::collection($model),
+            'ModelYears' => ModelYearResource::collection($modelYear),
+            'FuelTypes' => FuelTypeCustomResource::collection($fuelType),
+            'Transmissions' => TransmissionCustomResource::collection($transmission),
+            'Features' => FeatureCustomResource::collection($feature),
+            'Colors' => CarColorCustomResource::collection($color)
+        ];
+
+        $language == 'en' ? $message = 'The process succeeded in reaching all data of Home page' : $message = 'نجحت العملية في الوصول إلى كافة بيانات الصفحة الرئيسية ';
+
+
+        return Helper::ResponseData($data,$message,true,200);
+    }
+    
     public function getAllCategoriesWithID(){
         
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
@@ -247,7 +356,7 @@ class HomeRepo implements HomeInterface
                 $dateDiffInDays = $this->dateDiffInDays($start_date,$return_date);
             }
             
-            $car = $this->car;
+            $car = $this->car->where('active',true);
             if($price != null){
                 if($dateDiffInDays < 7){ 
                     $car = $car->where(function(Builder $query) use($price,$dateDiffInDays){
@@ -424,9 +533,13 @@ class HomeRepo implements HomeInterface
         }
         
     }
-    public function getAllCarDetailsPageCars(){
+    public function getAllCarDetailsPageCars($id = null){
+        if($id != null){
+            $car = $this->car->where('active',true)->where('uuid','!=',$id)->latest()->take(6)->get();
+        }else{
+            $car = $this->car->where('active',true)->latest()->take(6)->get();
+        }
         
-        $car = $this->car->where('active',true)->latest()->take(6)->get();
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $language == 'en' ? $message = 'The process successfully reached all cars on the car details page.' : $message = 'نجحت العملية في الوصول إلى جميع السيارات الموجودة في صفحة تفاصيل السيارة ';
 

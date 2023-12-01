@@ -30,7 +30,8 @@ class BranchResource extends JsonResource
             'longitude' => $this->longitude,
             'latitude' => $this->latitude,
             'active' => $this->active,
-            'City' => new CityResource($this->City)
+            'City' => new CityResource($this->City),
+            'mobile' => $this->mobile
         ];
     }
 }

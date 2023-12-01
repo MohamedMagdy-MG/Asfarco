@@ -21,6 +21,7 @@ class CarResource extends JsonResource
 
         return [
             'id' => $this->uuid,
+            'active' => $this->active,
             'name' => $language == 'ar' ? $this->name_ar : $this->name_en,
             'daily'=> $this->daily,
             'daily_discount'=> $this->daily_discount,

@@ -4,6 +4,7 @@ namespace App\Http\RepoClasses\frontend;
 
 use App\Helpers\Helper;
 use App\Http\RepoInterfaces\frontend\HomeInterface;
+use App\Http\Resources\frontend\BranchResource;
 use App\Http\Resources\frontend\CarCategoryResource;
 use App\Http\Resources\frontend\CarDetailsResource;
 use App\Http\Resources\frontend\CarResource;
@@ -15,6 +16,7 @@ use App\Http\Resources\frontend\CustomCarResources\FuelTypeCustomResource;
 use App\Http\Resources\frontend\CustomCarResources\ModelYearResource;
 use App\Http\Resources\frontend\CustomCarResources\TransmissionCustomResource;
 use App\Http\Resources\frontend\filter\CarCategoryFilterResource;
+use App\Models\Branch;
 use App\Models\Car;
 use App\Models\CarAdditionalFeatures;
 use App\Models\CarBrand;
@@ -29,6 +31,7 @@ use Exception;
 use App\Models\Reservation;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class HomeRepo implements HomeInterface
 {
@@ -51,6 +54,7 @@ class HomeRepo implements HomeInterface
     public function __construct()
     {
         $this->car = new Car();
+        $this->branch = new Branch();
         $this->carCategory = new CarCategory();
         $this->fuelType = new FuelType();
         $this->brand = new CarBrand();
@@ -206,7 +210,7 @@ class HomeRepo implements HomeInterface
 
     public function getAllCars($id,$start_date,$return_date,$price,$brand,$model,$year,$category,$color,$fuel_type,$features,$passengers,$luggae,$transmission){
         if($id != null){
-            $car = $this->car->where('uuid',$id)->first();
+            $car = $this->car->where('active',true)->where('uuid',$id)->first();
             if(!$car){
                 request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
                 $language == 'en' ? $message = 'Car Not Found' : $message = 'لم يتم العثور على السيارة';
@@ -229,7 +233,7 @@ class HomeRepo implements HomeInterface
                 $dateDiffInDays = $this->dateDiffInDays($start_date,$return_date);
             }
             
-            $car = $this->car;
+            $car = $this->car->where('active',true);
             if($price != null){
                 if($dateDiffInDays < 7){ 
                     $car = $car->where(function(Builder $query) use($price,$dateDiffInDays){
@@ -386,7 +390,7 @@ class HomeRepo implements HomeInterface
                         }
                     }
                 }
-                $new_cars = $this->car->whereIn('uuid',$push_cars)->latest()->paginate(4);
+                $new_cars = $this->car->where('active',true)->whereIn('uuid',$push_cars)->latest()->paginate(4);
             }
             
             $data = [
@@ -406,9 +410,13 @@ class HomeRepo implements HomeInterface
         }
         
     }
-    public function getAllCarDetailsPageCars(){
+    public function getAllCarDetailsPageCars($id = null){
         
-        $car = $this->car->where('active',true)->latest()->take(6)->get();
+        if($id != null){
+            $car = $this->car->where('active',true)->where('uuid','!=',$id)->latest()->take(6)->get();
+        }else{
+            $car = $this->car->where('active',true)->latest()->take(6)->get();
+        }
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $language == 'en' ? $message = 'The process successfully reached all cars on the car details page.' : $message = 'نجحت العملية في الوصول إلى جميع السيارات الموجودة في صفحة تفاصيل السيارة ';
 
@@ -423,12 +431,31 @@ class HomeRepo implements HomeInterface
         return Helper::ResponseData(CarResource::collection($car),$message,true,200);
     }
     public function getAllSavedCarsPageCars(){
+        if(Auth::guard('api')->user() != null){
+            $deleted_cars = [];
+            foreach (Auth::guard('api')->user()->Favourites as $deleted_car) {
+                array_push($deleted_cars,$deleted_car->Car->uuid);
+            }
+            $car = $this->car->where('active',true)->whereNotIn('uuid',$deleted_cars)->latest()->take(6)->get();
+
+        }else{
+            $car = $this->car->where('active',true)->latest()->take(6)->get();
+        }
         
-        $car = $this->car->where('active',true)->latest()->take(6)->get();
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $language == 'en' ? $message = 'The process succeeded in accessing all the cars on the Saved Cars page' : $message = 'نجحت العملية في الوصول إلى كافة السيارات الموجودة في صفحة السيارات المحفوظة ';
 
         return Helper::ResponseData(CarResource::collection($car),$message,true,200);
+    }
+
+    public function getAllBranches(){
+        
+        $branches = $this->branch->where('active',true)->get();
+    
+        request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+        $language == 'en' ? $message = 'The process succeeded in accessing all the branches' : $message = 'نجحت العملية في الوصول إلى جميع الفروع ';
+
+        return Helper::ResponseData(BranchResource::collection($branches),$message,true,200);
     }
 
 

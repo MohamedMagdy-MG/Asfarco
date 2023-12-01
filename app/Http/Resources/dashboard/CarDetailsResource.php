@@ -47,6 +47,8 @@ class CarDetailsResource extends JsonResource
             'name_ar' => $this->name_ar,
             'description_en' => $this->description_en,
             'description_ar' => $this->description_ar,
+            'description_two_en' => $this->description_two_en,
+            'description_two_ar' => $this->description_two_ar,
             'bags'=> $this->bags,
             'passengers'=> $this->passengers,
             'doors'=> $this->doors,

@@ -603,10 +603,10 @@
                                                                                                         role="presentation"
                                                                                                         style="border:none;border-bottom:0px solid transparent;border-left:0px solid transparent;border-radius:8px;border-right:0px solid transparent;border-top:0px solid transparent;cursor:auto;height:45px;mso-padding-alt:10px 25px;background:#E1561B;"
                                                                                                         valign="middle">
-                                                                                                        <p href=""
+                                                                                                        <a href="{{ $data['link']  }}"
                                                                                                             style="display:inline-block;background:#E1561B;color:#ffffff;font-family:Arial;font-size:14px;font-weight:600;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:8px;">
                                                                                                             change your password
-                                                                                                        </p>
+                                                                                                        </a>
                                                                                                     </td>
                                                                                                 </tr>
                                                                                             </tbody>

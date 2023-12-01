@@ -72,6 +72,10 @@ class Admin extends Authenticatable implements JWTSubject
         return $this->belongsTo(Branch::class,'branch_id','uuid');
     }
 
+    public function Notifications(){
+        return $this->hasMany(Notification::class,'admin_id','uuid');
+    }
+
 
    
 

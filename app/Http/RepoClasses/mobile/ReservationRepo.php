@@ -15,6 +15,7 @@ use App\Models\CarHasColors;
 use App\Models\City;
 use App\Models\Reservation;
 use App\Models\ReservationAddress;
+use App\Models\ReservationAirportTransfer;
 use App\Models\ReservationColor;
 use App\Models\ReservationFeature;
 use App\Models\ReservationPayment;
@@ -31,6 +32,7 @@ use Illuminate\Support\Facades\Auth;
 class ReservationRepo implements ReservationInterface
 {
     public $reservation;
+    public $reservationAirportTransfer;
     public $reservationPrice;
     public $reservationFeature;
     public $reservationAddress;
@@ -48,6 +50,7 @@ class ReservationRepo implements ReservationInterface
     public function __construct()
     {
         $this->reservation = new Reservation();
+        $this->reservationAirportTransfer = new ReservationAirportTransfer();
         $this->reservationPrice = new ReservationPrice();
         $this->reservationFeature = new ReservationFeature();
         $this->reservationAddress = new ReservationAddress();
@@ -185,6 +188,11 @@ class ReservationRepo implements ReservationInterface
         return "unknown"; 
     }
     public function Reserve($data){
+        if(Auth::guard()->user()->verify_document == false){
+            request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
+            $language == 'en' ? $message = 'The car reservation cannot be started without the system administrator’s approval of the driving papers' : $message = 'لا يمكن البدء بحجز السيارة دون موافقة مسؤول النظام على أوراق القيادة';
+            return Helper::ResponseData(null,$message,false,400);
+        }
         $car = $this->car->where('uuid',$data['car_id'])->first();
         if(!$car){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
@@ -221,6 +229,7 @@ class ReservationRepo implements ReservationInterface
         $reservation = $query->first();
         $reservation_count = $query->count();
         $deliver_to_my_location = false;
+        $airport_transfer_service = false;
         $dateDiffInDays = $this->dateDiffInDays($data['start_date'],$data['return_date']);
         if($dateDiffInDays < 7){ 
             $mode = 'Daily';
@@ -281,7 +290,7 @@ class ReservationRepo implements ReservationInterface
                             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
                             $language == 'en' ? $message = 'Payment card data is not recognized' : $message = 'لم يتم التعرف على بيانات بطاقة الدفع';
                             return Helper::ResponseData(null,$message,false,400,[
-                                'number' => $message
+                                'number' => [$message]
                             ]);
                     
                         }
@@ -312,6 +321,7 @@ class ReservationRepo implements ReservationInterface
                         $total = $total + $car->deliver_to_my_location_price;
                     }
                     else if($feature == "airport_transfer_service" && $car->airport_transfer_service == true){
+                        $airport_transfer_service = true;
                         $this->reservationFeature->create([
                             'name_en' => "airport transfer service",
                             'name_ar' => "خدمة نقل المطار",
@@ -402,6 +412,16 @@ class ReservationRepo implements ReservationInterface
 
                     
                 }
+
+                if($airport_transfer_service == true){
+                    $new_airport_transfer_service = $this->reservationAirportTransfer->create([
+                        'address' => $data['address'],
+                        'city_id' => $city->id,
+                        'reservation_id' => $new_reservation->uuid,
+                    ]);
+
+                    
+                }
         
             }
 
@@ -443,7 +463,7 @@ class ReservationRepo implements ReservationInterface
                         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
                         $language == 'en' ? $message = 'Payment card data is not recognized' : $message = 'لم يتم التعرف على بيانات بطاقة الدفع';
                         return Helper::ResponseData(null,$message,false,400,[
-                            'number' => $message
+                            'number' => [$message]
                         ]);
                 
                     }
@@ -473,6 +493,7 @@ class ReservationRepo implements ReservationInterface
                     $total = $total + $car->deliver_to_my_location_price;
                 }
                 else if($feature == "airport_transfer_service" && $car->airport_transfer_service == true){
+                    $airport_transfer_service = true;
                     $this->reservationFeature->create([
                         'name_en' => "airport transfer service",
                         'name_ar' => "خدمة نقل المطار",
@@ -560,6 +581,16 @@ class ReservationRepo implements ReservationInterface
                     ]);
                 }
             }
+            
+            if($airport_transfer_service == true){
+                $new_airport_transfer_service = $this->reservationAirportTransfer->create([
+                    'address' => $data['address'],
+                    'city_id' => $city->id,
+                    'reservation_id' => $new_reservation->uuid,
+                ]);
+
+                
+            }
 
         }
         if($data['payment_mode'] == "Visa"){
@@ -578,7 +609,15 @@ class ReservationRepo implements ReservationInterface
                 ]);
                 request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
                 $language == 'en' ? $message = "The operation succeeded in impounding the car" : $message = 'نجحت العملية في حجز السيارة';
-
+                $notification_data = [
+                    'model' => 'Pending_Reservation',
+                    'title_en' => 'Asfarco - Reservation',
+                    'title_ar' => 'اسفاركو - الحجوزات',
+                    'message_en' => 'A new reservation was added for the '.$car->name_en.' car by customer '.Auth::guard('api')->user()->name.' during the period from '.$data['start_date']. 'to '.$data['return_date'],
+                    'message_ar' => 'تم اضافة حجز جديد للسيارة '.$car->name_ar.' من قبل العميل '.Auth::guard('api')->user()->name.' خلال الفترة من' .$data['start_date'].' الى '.$data['return_date'],
+                    'branch_id' => $car->branch_id
+                ];
+                Helper::sendNotifyToDashboard($notification_data);
                 return Helper::ResponseData(new ReservationResource($new_reservation),$message,true,200);
             }else{
                 $reservation != null ? $reservation->forceDelete() : $new_reservation->forceDelete();
@@ -588,6 +627,20 @@ class ReservationRepo implements ReservationInterface
                 }
             }
         }
+
+
+        //Notification
+        $notification_data = [
+            'model' => 'Pending_Reservation',
+            'title_en' => 'Asfarco - Reservation',
+            'title_ar' => 'اسفاركو - الحجوزات',
+            'message_en' => 'A new reservation was added for the '.$car->name_en.' car by customer '.Auth::guard('api')->user()->name.' during the period from '.$data['start_date']. 'to '.$data['return_date'],
+            'message_ar' => 'تم اضافة حجز جديد للسيارة '.$car->name_ar.' من قبل العميل '.Auth::guard('api')->user()->name.' خلال الفترة من' .$data['start_date'].' الى '.$data['return_date'],
+            'branch_id' => $car->branch_id
+        ];
+        Helper::sendNotifyToDashboard($notification_data);
+
+
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $language == 'en' ? $message = "The operation succeeded in impounding the car" : $message = 'نجحت العملية في حجز السيارة';
         return Helper::ResponseData(new ReservationResource($new_reservation),$message,true,200);
@@ -611,7 +664,7 @@ class ReservationRepo implements ReservationInterface
             return Helper::ResponseData(null,$message,false,404);
         }
         if(($this->dateDiffInDaysCancel($reservation->pickup,Carbon::now(new DateTimeZone('Asia/Dubai'))->toDateTimeString()) >= 4) && ($reservation->pickup > Carbon::now(new DateTimeZone('Asia/Dubai'))->toDateTimeString())){
-            if($reservation->Payment != null){
+            if($reservation->Payment != null && $reservation->payment_mode == "Visa"){
                 $stripeServices = $this->stripeServices->refund($reservation->Payment->stripe_operation_id);
                 if($stripeServices['status'] == false){
                     if(array_key_exists('en',$stripeServices['message'])){
@@ -621,8 +674,22 @@ class ReservationRepo implements ReservationInterface
                 }
             }
             $reservation->update([
-                'status' => 'Cancelled'
+                'status' => 'Cancelled',
+                'cancelled_on' => Carbon::now(new DateTimeZone('Asia/Dubai'))
             ]);
+
+            //Notification
+            $notification_data = [
+                'model' => 'Cancelled_Reservation',
+                'title_en' => 'Asfarco - Reservation',
+                'title_ar' => 'اسفاركو - الحجوزات',
+                'message_en' => 'The '.$reservation->Car->name_en.' car reservation was canceled by the customer '.$reservation->User->name.' during the period from '.$reservation->pickup.' to '.$reservation->return,
+                'message_ar' => 'تم إلغاء حجز سيارة '.$reservation->Car->name_ar.' من قبل العميل '.$reservation->User->name.' خلال الفترة من '.$reservation->pickup.' إلى '.$reservation->return,
+                'branch_id' => $reservation->Car->branch_id
+            ];
+            Helper::sendNotifyToDashboard($notification_data);
+
+
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = "The operation succeeded in canceling the car reservation" : $message = 'نجحت العملية في إلغاء حجز السيارة';
     
@@ -724,23 +791,9 @@ class ReservationRepo implements ReservationInterface
             $mode = 'Yearly';
         }
 
-        $response_data = [];
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
         $carColor = $this->carColor->where('hexa_code',$data['selected_color'])->first();
-        array_push($response_data,[
-            'CarDetails' => [
-                'CoverImage' => count($car->Images) > 0 ? ($car->Images[0] != null ? $car->Images[0]->image : null) : null,
-                'name' => $language == 'ar' ? $car->name_ar : $car->name_en,
-                'Color' => [
-                    'name' => $language == 'ar' ? $carColor->name_ar : $carColor->name_en,
-                    'hexa_code' => $carColor->hexa_code
-                ]
-            ],
-            'ReservationDetails' => [
-                'days' => $dateDiffInDays,
-                'mode' => $mode,
-            ]
-        ]);
+        
         
 
         $total = 0;
@@ -806,7 +859,19 @@ class ReservationRepo implements ReservationInterface
             
         }
 
-        array_push($response_data,[
+        $response_data=[
+            'CarDetails' => [
+                'CoverImage' => count($car->Images) > 0 ? ($car->Images[0] != null ? $car->Images[0]->image : null) : null,
+                'name' => $language == 'ar' ? $car->name_ar : $car->name_en,
+                'Color' => [
+                    'name' => $language == 'ar' ? $carColor->name_ar : $carColor->name_en,
+                    'hexa_code' => $carColor->hexa_code
+                ]
+            ],
+            'ReservationDetails' => [
+                'days' => $dateDiffInDays,
+                'mode' => $mode,
+            ],
             'PaymentDetails' => [
                 'Features' => $Features,
                 'car_price' => $car_price,
@@ -815,7 +880,7 @@ class ReservationRepo implements ReservationInterface
                 'total' => (double)number_format((float)$price, 2, '.', '')
                 
             ]
-        ]);
+        ];
 
         $language == 'en' ? $message = "The process succeeded in retrieving the reservation invoice" : $message = 'نجحت العملية في استرجاع فاتورة الحجز';
         return Helper::ResponseData($response_data,$message,true,200);

@@ -3,6 +3,7 @@
 namespace App\Http\Resources\mobile;
 
 use App\Http\Resources\frontend\filter\FeatureFilterResource;
+use App\Http\Resources\mobile\CustomCarResources\CarHasColorsResource;
 use App\Models\CarFavourites;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
@@ -85,7 +86,7 @@ class CarResource extends JsonResource
         }
 
         $favourite = false;
-        if (Auth::check()) {
+        if (Auth::guard('api')->user() != null) {
             if(CarFavourites::where('car_id',$this->uuid)->where('user_id',Auth::guard('api')->user()->uuid)->first()){
                 $favourite = true;
             }
@@ -95,6 +96,7 @@ class CarResource extends JsonResource
         return [
             'id' => $this->uuid,
             'name' => $language == 'ar' ? $this->name_ar : $this->name_en,
+            'CarColors' => CarHasColorsResource::collection($this->Colors),
             'features' => [
                 'luggage'=> $this->bags,
                 'passengers'=> $this->passengers,

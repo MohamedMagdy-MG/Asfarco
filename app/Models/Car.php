@@ -21,6 +21,8 @@ class Car extends Model
         'name_ar',
         'description_en',
         'description_ar',
+        'description_two_en',
+        'description_two_ar',
         'active',
         'bags',
         'passengers',

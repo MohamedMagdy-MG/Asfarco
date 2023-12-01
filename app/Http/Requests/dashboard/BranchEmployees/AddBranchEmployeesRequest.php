@@ -3,6 +3,7 @@
 namespace App\Http\Requests\dashboard\BranchEmployees;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 class AddBranchEmployeesRequest extends FormRequest
 {
@@ -21,8 +22,8 @@ class AddBranchEmployeesRequest extends FormRequest
             'email' => 'required|email|unique:admins,email',
             // 'password' => 'required|min:8|max:30',
             'image' => 'nullable|url|active_url',
-            'branch' => 'required'
-            
+            'branch' => Auth::guard('dashboard')->user()->role == 'Branch Manager' ? 'nullable' : 'required',
+
         ];
     }
 

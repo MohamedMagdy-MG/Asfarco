@@ -30,7 +30,7 @@ use App\Models\FuelType;
 use App\Models\ModelYear;
 use App\Models\Transmission;
 use Illuminate\Database\Eloquent\Builder;
-
+use Illuminate\Support\Facades\Auth;
 
 class CarRepo implements CarInterface
 {
@@ -134,8 +134,13 @@ class CarRepo implements CarInterface
         return Helper::ResponseData(CarColorCustomResource::collection($color),$message,true,200);
     }
     public function getAllCars($search,$category,$branch){
-        
-        $car = $this->car;
+        if(Auth::guard('dashboard')->user()->role == 'Branch Manager' || Auth::guard('dashboard')->user()->role == 'Branch Employee'){
+            $car = $this->car->whereHas('Branch',function(Builder $query){
+                $query->where('uuid',Auth::guard('dashboard')->user()->branch_id);
+            });
+        }else{
+            $car = $this->car;
+        }
         if($branch != null){
             $car = $car->where(function(Builder $query) use($branch){
                 $query->whereHas('Branch',function(Builder $query) use($branch){
@@ -187,8 +192,13 @@ class CarRepo implements CarInterface
         return Helper::ResponseData($data,$message,true,200);
     }
     public function Show($id){   
-        
-        $car = $this->car->where('uuid',$id)->first();
+        if(Auth::guard('dashboard')->user()->role == 'Branch Manager' || Auth::guard('dashboard')->user()->role == 'Branch Employee'){
+            $car = $this->car->where('uuid',$id)->whereHas('Branch',function(Builder $query){
+                $query->where('uuid',Auth::guard('dashboard')->user()->branch_id);
+            })->first();
+        }else{
+            $car = $this->car->where('uuid',$id)->first();
+        }
         if(!$car){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Car Not Found' : $message = 'السيارة غير موجودة';
@@ -261,6 +271,8 @@ class CarRepo implements CarInterface
             'name_ar' => $data['name_ar'],
             'description_en' => $data['description_en'],
             'description_ar' => $data['description_ar'],
+            'description_two_en' => $data['description_two_en'],
+            'description_two_ar' => $data['description_two_ar'],
             'bags' => $data['bags'],
             'passengers' => $data['passengers'],
             'doors' => $data['doors'],
@@ -343,7 +355,13 @@ class CarRepo implements CarInterface
 
     public function Update($data = []){ 
         
-        $car = $this->car->where('uuid',$data['id'])->first();
+        if(Auth::guard('dashboard')->user()->role == 'Branch Manager' || Auth::guard('dashboard')->user()->role == 'Branch Employee'){
+            $car = $this->car->where('uuid',$data['id'])->whereHas('Branch',function(Builder $query){
+                $query->where('uuid',Auth::guard('dashboard')->user()->branch_id);
+            })->first();
+        }else{
+            $car = $this->car->where('uuid',$data['id'])->first();
+        }
         if(!$car){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Car Not Found' : $message = 'السيارة غير موجودة';
@@ -404,6 +422,8 @@ class CarRepo implements CarInterface
             'name_ar' => $data['name_ar'],
             'description_en' => $data['description_en'],
             'description_ar' => $data['description_ar'],
+            'description_two_en' => $data['description_two_en'],
+            'description_two_ar' => $data['description_two_ar'],
             'bags' => $data['bags'],
             'passengers' => $data['passengers'],
             'doors' => $data['doors'],
@@ -498,7 +518,13 @@ class CarRepo implements CarInterface
     
     public function Delete($id){   
         
-        $car = $this->car->where('uuid',$id)->first();
+        if(Auth::guard('dashboard')->user()->role == 'Branch Manager' || Auth::guard('dashboard')->user()->role == 'Branch Employee'){
+            $car = $this->car->where('uuid',$id)->whereHas('Branch',function(Builder $query){
+                $query->where('uuid',Auth::guard('dashboard')->user()->branch_id);
+            })->first();
+        }else{
+            $car = $this->car->where('uuid',$id)->first();
+        }
         if(!$car){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Car Not Found' : $message = 'السيارة غير موجودة';
@@ -519,7 +545,13 @@ class CarRepo implements CarInterface
 
     public function Active($id){   
         
-        $car = $this->car->where('uuid',$id)->first();
+        if(Auth::guard('dashboard')->user()->role == 'Branch Manager' || Auth::guard('dashboard')->user()->role == 'Branch Employee'){
+            $car = $this->car->where('uuid',$id)->whereHas('Branch',function(Builder $query){
+                $query->where('uuid',Auth::guard('dashboard')->user()->branch_id);
+            })->first();
+        }else{
+            $car = $this->car->where('uuid',$id)->first();
+        }
         if(!$car){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Car Not Found' : $message = 'السيارة غير موجودة';

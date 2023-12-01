@@ -3,6 +3,7 @@
 namespace App\Http\Requests\dashboard\Car;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 class AddCarRequest extends FormRequest
 {
@@ -36,22 +37,25 @@ class AddCarRequest extends FormRequest
             'model_id' => 'required',
             'model_year_id' => 'required',
             'transmission_id' => 'required',
-            'branch_id' => 'required',
+            'branch_id' => Auth::guard('dashboard')->user()->role == 'Branch Manager' || Auth::guard('dashboard')->user()->role == 'Branch Employee' ? 'nullable' : 'required',
             'Images' => 'array',
             'Images.*' => 'required|url|active_url',
             'Features' => 'array',
             'Features.*' => 'required',
             'AdditionalFeatures' => 'array',
-            'AdditionalFeatures.*.name_en' => 'required',
-            'AdditionalFeatures.*.name_ar' => 'required',
-            'AdditionalFeatures.*.price' => 'required|numeric',
-            'Colors' => 'array',
+            'AdditionalFeatures.*.name_en' => 'nullable',
+            'AdditionalFeatures.*.name_ar' => 'nullable',
+            // 'AdditionalFeatures.*.price' => 'required|numeric',
+            'AdditionalFeatures.*.price' => 'nullable',
+            'Colors' => 'array|required',
             'Colors.*.color_id' => 'required',
             'Colors.*.total' => 'required|integer',
             'airport_transfer_service' => 'required|boolean',
-            'airport_transfer_service_price' => 'required|numeric',
+            // 'airport_transfer_service_price' => 'required|numeric',
+            'airport_transfer_service_price' => 'nullable',
             'deliver_to_my_location' => 'required|boolean',
-            'deliver_to_my_location_price' => 'required|numeric',
+            // 'deliver_to_my_location_price' => 'required|numeric',
+            'deliver_to_my_location_price' => 'nullable|numeric',
             
         ];
     }

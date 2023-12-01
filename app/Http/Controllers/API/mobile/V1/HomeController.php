@@ -18,6 +18,16 @@ class HomeController extends Controller
     {
         $this->homeRepo = new HomeRepo();
     }
+    public function getAllHomePageFilter()
+    {
+        return $this->homeRepo->getAllHomePageFilter();
+    }
+    public function getAllFilterPage()
+    {
+        return $this->homeRepo->getAllFilterPage();
+    }
+
+
     public function getAllCategories()
     {
         return $this->homeRepo->getAllCategories();

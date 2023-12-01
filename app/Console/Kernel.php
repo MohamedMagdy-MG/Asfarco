@@ -13,11 +13,19 @@ class Kernel extends ConsoleKernel
      * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
      * @return void
      */
+
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('check:reservation')->everyMinute();
         
     }
+
+    // protected function shortSchedule(\Spatie\ShortSchedule\ShortSchedule $schedule)
+
+    // {
+    //     $schedule->command('check:reservation')->everySecond();
+        
+    // }
 
     /**
      * Register the commands for the application.

@@ -21,7 +21,9 @@ class AddBranchRequest extends FormRequest
             'address_ar' => 'required',
             'longitude' => 'required|numeric',
             'latitude' => 'required|numeric',
-            'city_id' => 'required'
+            'city_id' => 'required',
+            'mobile' => 'required|unique:branches,mobile|regex:/971([\d]{9})/',
+
             
             
         ];
@@ -43,7 +45,10 @@ class AddBranchRequest extends FormRequest
                 'latitude.numeric' => 'صيغة حقل خط العرض خطأ.',
                 'city_id.required' => 'حقل المحافظة مطلوب.',
 
-               
+                'mobile.required' => 'حقل الهاتف المحمول مطلوب.',
+                'mobile.unique' => 'تم أخذ الهاتف المحمول بالفعل.',
+                'mobile.regex' => 'يجب عليك استخدام رقم هاتف إماراتي',
+
 
 
 
@@ -60,6 +65,9 @@ class AddBranchRequest extends FormRequest
                 'latitude.numeric' => 'The Latitude field is invalid.',
                 'city_id.required' => 'The City field is required.',
 
+                'mobile.required' => 'The Mobile field is required.',
+                'mobile.unique' => 'The Mobile has already been taken.',
+                'mobile.regex' => 'You must use an Emirati mobile number',
 
             ];
         }

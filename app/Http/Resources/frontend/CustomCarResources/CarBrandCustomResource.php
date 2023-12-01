@@ -22,6 +22,7 @@ class CarBrandCustomResource extends JsonResource
         return [
             'id' => $this->uuid,
             'name' => $language == 'ar' ? $this->name_ar : $this->name_en,
+            'image' => $this->image
         ];
     }
 }

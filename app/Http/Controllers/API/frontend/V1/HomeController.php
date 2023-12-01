@@ -128,7 +128,11 @@ class HomeController extends Controller
     }
     public function getAllCarDetailsPageCars()
     {
-        return $this->homeRepo->getAllCarDetailsPageCars();
+        $id = null;
+        if(array_key_exists('id',$_GET)){
+            $id = $_GET['id'];
+        }
+        return $this->homeRepo->getAllCarDetailsPageCars($id);
     }
     public function getAllAboutUsPageCars()
     {
@@ -137,6 +141,10 @@ class HomeController extends Controller
     public function getAllSavedCarsPageCars()
     {
         return $this->homeRepo->getAllSavedCarsPageCars();
+    }
+    public function getAllBranches()
+    {
+        return $this->homeRepo->getAllBranches();
     }
 
 

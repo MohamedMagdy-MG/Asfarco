@@ -13,6 +13,7 @@
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.4",
         "league/flysystem-aws-s3-v3": "1.0.29",
+        "spatie/laravel-short-schedule": "^1.5",
         "stevebauman/location": "^6.6",
         "stichoza/google-translate-php": "^4.1",
         "stripe/stripe-php": "^13.0",

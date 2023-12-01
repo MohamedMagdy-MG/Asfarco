@@ -70,4 +70,8 @@ class Reservation extends Model
         return $this->hasOne(ReservationPayment::class,'reservation_id','uuid');
     }
 
+    public function AirportTransfer(){
+        return $this->hasOne(ReservationAddress::class,'reservation_id','uuid');
+    }
+
 }

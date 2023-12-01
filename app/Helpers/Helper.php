@@ -1,10 +1,8 @@
 <?php
 namespace App\Helpers;
 
-use App\Models\AdminNotifications;
-use App\Models\DashboardSetting;
-use App\Models\User;
-use App\Models\UserNotifications;
+use App\Models\Admin;
+use App\Models\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -47,6 +45,84 @@ class Helper
         return  Http::acceptJson()->withHeaders([
             'Content-Type'  => 'application/json',
         ])->withToken(config('app.Fcm_Server_Key'))->post('https://fcm.googleapis.com/fcm/send',$data);
+
+    }
+
+
+    public static function sendNotifyToDashboard($data)
+    {
+        // $data = [
+        //     'model' => 'Pending_Reservation' || 'Ongoing_Reservation' || 'Completed_Reservation' || 'Cancelled_Reservation' || 'Registeration' || 'Verification',
+        //     'title' => Auth::guard('api')->user()->name,
+        //     'avatar' => Auth::guard('api')->user()->image,
+        //     'message_en' => '',
+        //     'message_ar' => '',
+        //     'branch_id' => '',
+        // ];
+        
+        $ids = [];
+        $admins = Admin::where('role','Admin')->get();
+        foreach ($admins as $admin) {
+            array_push($ids, $admin->uuid);
+        }
+        $managers = Admin::where('role','Manager')->get();
+        foreach ($managers as $manager) {
+            array_push($ids, $manager->uuid);
+        }
+
+        if(isset($data['branch_id'])){
+            $branchManagers = Admin::where('role','Branch Manager')->where('branch_id',$data['branch_id'])->get();
+            foreach ($branchManagers as $branchManager) {
+                array_push($ids, $branchManager->uuid);
+            }
+            $branchEmployees = Admin::where('role','Branch Employee')->where('branch_id',$data['branch_id'])->get();
+            foreach ($branchEmployees as $branchEmployee) {
+                array_push($ids, $branchEmployee->uuid);
+            }
+        }
+
+
+        $users = Admin::whereIn('uuid',$ids)->get();
+        foreach ($users as $user) {
+            if($user->language == "AR"){
+                $title = $data['title_ar'];
+                $message = $data['message_ar'];
+            }else{
+                $title = $data['title_en'];
+                $message = $data['message_en'];
+            }
+
+            $firebase_data = [
+                'content-available' => true,
+                'priority' => 'high',
+                'notification' => [
+                    "mutable_content"=> true,
+                    "sound" => "Tri-tone",
+                    "title" => $title,
+                    "body" =>  $message,
+                    'image' => 'https://services.asfarcogroup.com/media/1698446973.svg'
+                ],
+                "data" => [
+                    "model" => $data['model']
+                ],
+                "to" => $user->firebasetoken
+            ];
+            Http::acceptJson()->withHeaders([
+                'Content-Type'  => 'application/json',
+            ])->withToken(config('app.Fcm_Server_Key'))->post('https://fcm.googleapis.com/fcm/send',$firebase_data);
+
+
+            Notification::create([
+                'admin_id' => $user->uuid,
+                'model' => $data['model'] ,
+                'title_en' => $data['title_en'],
+                'title_ar' => $data['title_ar'],
+                'message_en' => $data['message_en'],
+                'message_ar' => $data['message_ar']
+            ]);
+        }
+
+       
 
     }
 

@@ -21,7 +21,8 @@ class Branch extends Model
         'longitude',
         'latitude',
         'active',
-        'city_id'
+        'city_id',
+        'mobile'
     ];
     protected $casts = [];
     protected $hidden = [
@@ -45,6 +46,6 @@ class Branch extends Model
     }
 
     public function Cars(){
-        return $this->hasMany(Branch::class,'branch_id','uuid');
+        return $this->hasMany(Car::class,'branch_id','uuid');
     }
 }

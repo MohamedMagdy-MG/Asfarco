@@ -4,6 +4,8 @@ namespace App\Http\Resources\mobile;
 
 use App\Http\Resources\mobile\filter\FeatureFilterResource;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Stichoza\GoogleTranslate\GoogleTranslate;
+
 
 class ReservationCarResource extends JsonResource
 {
@@ -30,11 +32,12 @@ class ReservationCarResource extends JsonResource
     {
         
         request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
-               
+        $transalte = new GoogleTranslate();
         return [
             'id' => $this->uuid,
+            'EstimatedPickupTime' => $language == 'ar' ? $transalte->setSource('en')->setTarget('ar')->translate(date('d/m/Y - h:i A', strtotime($this->pickup))   ): date('l, d/m/Y - h:i A', strtotime($this->pickup)),
             'name' => $language == 'ar' ? $this->Car->name_ar : $this->Car->name_en,
-            'prices' => $this->Price->total,
+            'prices' => $this->Price != null ? $this->Price->total : 0,
             'pickup' => $this->pickup,
             'return' => $this->return,
             'mode' => $this->mode,

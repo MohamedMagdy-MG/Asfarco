@@ -53,6 +53,7 @@ Route::prefix('profile')->group(function(){
 Route::prefix('home')->group(function(){
     Route::get('/categories','HomeController@getAllCategories');
     Route::get('/cars','HomeController@getAllHomePageCars');
+    Route::get('/page','HomeController@getAllHomePageFilter');
     
 });
 
@@ -61,6 +62,7 @@ Route::prefix('cars')->group(function(){
     Route::post('/','HomeController@getAllCarsByPost');
     Route::get('/brands','HomeController@getAllHomeBrands');
     Route::get('/categories','HomeController@getAllHomeCategories');
+    Route::get('/page','HomeController@getAllFilterPage');
 
     Route::prefix('filter')->group(function(){
         Route::get('/categories','HomeController@getAllCategoriesWithID');

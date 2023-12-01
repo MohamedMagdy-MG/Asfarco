@@ -10,6 +10,7 @@ use App\Http\Requests\dashboard\Car\AddCarRequest;
 use App\Http\Requests\dashboard\Car\DeleteCarRequest;
 use App\Http\Requests\dashboard\Car\ShowCarRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -70,7 +71,7 @@ class CarController extends Controller
     public function Add(Request $request)
     {
        
-        $validator = Validator::make($request->only(['name_en','name_ar','description_en','description_ar','bags','passengers','doors','daily','daily_discount','weekly','weekly_discount','monthly','monthly_discount','yearly','yearly_discount','category_id','fuel_id','brand_id','model_id','model_year_id','transmission_id','branch_id','Images','Features','AdditionalFeatures','Colors','airport_transfer_service','airport_transfer_service_price','deliver_to_my_location','deliver_to_my_location_price']),AddCarRequest::rules(),AddCarRequest::Message());
+        $validator = Validator::make($request->only(['name_en','name_ar','description_en','description_ar','description_two_en','description_two_ar','bags','passengers','doors','daily','daily_discount','weekly','weekly_discount','monthly','monthly_discount','yearly','yearly_discount','category_id','fuel_id','brand_id','model_id','model_year_id','transmission_id','branch_id','Images','Features','AdditionalFeatures','Colors','airport_transfer_service','airport_transfer_service_price','deliver_to_my_location','deliver_to_my_location_price']),AddCarRequest::rules(),AddCarRequest::Message());
         if($validator->fails()){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Add Car Operation Failed' : $message = 'فشلت عملية اضافة السيارة';
@@ -82,6 +83,8 @@ class CarController extends Controller
                 'name_ar' => $request->name_ar,
                 'description_en' => $request->description_en,
                 'description_ar' => $request->description_ar,
+                'description_two_en' =>  $request->description_two_en,
+                'description_two_ar' => $request->description_two_ar,
                 'bags' => $request->bags,
                 'passengers' => $request->passengers,
                 'doors' => $request->doors,
@@ -99,7 +102,7 @@ class CarController extends Controller
                 'model_id' => $request->model_id,
                 'model_year_id' => $request->model_year_id,
                 'transmission_id' => $request->transmission_id,
-                'branch_id' => $request->branch_id,
+                'branch_id' => Auth::guard('dashboard')->user()->role == 'Branch Manager' || Auth::guard('dashboard')->user()->role == 'Branch Employee' ?  Auth::guard('dashboard')->user()->branch_id : $request->branch_id,
                 'Images' => $request->Images,
                 'Features' => $request->Features,
                 'AdditionalFeatures' => $request->AdditionalFeatures,
@@ -118,7 +121,7 @@ class CarController extends Controller
     public function Update(Request $request)
     {
        
-        $validator = Validator::make($request->only(['id','name_en','name_ar','description_en','description_ar','bags','passengers','doors','daily','daily_discount','weekly','weekly_discount','monthly','monthly_discount','yearly','yearly_discount','category_id','fuel_id','brand_id','model_id','model_year_id','transmission_id','branch_id','Images','Features','AdditionalFeatures','Colors','airport_transfer_service','airport_transfer_service_price','deliver_to_my_location','deliver_to_my_location_price']),AddCarRequest::rules(),AddCarRequest::Message());
+        $validator = Validator::make($request->only(['id','name_en','name_ar','description_en','description_ar','description_two_en','description_two_ar','bags','passengers','doors','daily','daily_discount','weekly','weekly_discount','monthly','monthly_discount','yearly','yearly_discount','category_id','fuel_id','brand_id','model_id','model_year_id','transmission_id','branch_id','Images','Features','AdditionalFeatures','Colors','airport_transfer_service','airport_transfer_service_price','deliver_to_my_location','deliver_to_my_location_price']),AddCarRequest::rules(),AddCarRequest::Message());
         if($validator->fails()){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';
             $language == 'en' ? $message = 'Update Car Information Operation Failed' : $message = 'فشلت عملية تعديل بيانات السيارة';
@@ -131,6 +134,8 @@ class CarController extends Controller
                 'name_ar' => $request->name_ar,
                 'description_en' => $request->description_en,
                 'description_ar' => $request->description_ar,
+                'description_two_en' =>  $request->description_two_en,
+                'description_two_ar' => $request->description_two_ar,
                 'bags' => $request->bags,
                 'passengers' => $request->passengers,
                 'doors' => $request->doors,
@@ -148,7 +153,7 @@ class CarController extends Controller
                 'model_id' => $request->model_id,
                 'model_year_id' => $request->model_year_id,
                 'transmission_id' => $request->transmission_id,
-                'branch_id' => $request->branch_id,
+                'branch_id' => Auth::guard('dashboard')->user()->role == 'Branch Manager' || Auth::guard('dashboard')->user()->role == 'Branch Employee' ?  Auth::guard('dashboard')->user()->branch_id : $request->branch_id,
                 'Images' => $request->Images,
                 'Features' => $request->Features,
                 'AdditionalFeatures' => $request->AdditionalFeatures,
