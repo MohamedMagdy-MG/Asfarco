@@ -20,7 +20,7 @@ class UpdateProfileRequest extends FormRequest
             'gender'=> 'nullable|in:Male,Female,Other',
             'email' => 'nullable|email|unique:admins,email',
             'password' => 'nullable|regex:/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{6,}$/',
-            'image' => 'nullable|url|active_url',
+            'image' => 'nullable|url',
             
         ];
     }

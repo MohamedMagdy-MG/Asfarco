@@ -39,7 +39,7 @@ class AddCarRequest extends FormRequest
             'transmission_id' => 'required',
             'branch_id' => Auth::guard('dashboard')->user()->role == 'Branch Manager' || Auth::guard('dashboard')->user()->role == 'Branch Employee' ? 'nullable' : 'required',
             'Images' => 'array',
-            'Images.*' => 'required|url|active_url',
+            'Images.*' => 'required|url',
             'Features' => 'array',
             'Features.*' => 'required',
             'AdditionalFeatures' => 'array',

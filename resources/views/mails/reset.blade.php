@@ -263,7 +263,7 @@
                                                                                                     <td
                                                                                                         style="width:204px;">
 
-                                                                                                        <img src="https://api.newsypro.com/media/MailImages/1695816020.png"
+                                                                                                        <img src="https://services.asfarcogroup.com/media/Logo.png"
                                                                                                             style="border:0;border-left:0px solid transparent;border-right:0px solid transparent;border-top:0px solid transparent;border-bottom:0px solid transparent;border-radius:0px;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;"
                                                                                                             width="204"
                                                                                                             height="auto" />
@@ -526,7 +526,7 @@
                                                                                                     <td
                                                                                                         style="width:127px;">
 
-                                                                                                        <img src="https://api.newsypro.com/media/MailImages/1695816020.png"
+                                                                                                        <img src="https://services.asfarcogroup.com/media/Logo.png"
                                                                                                             style="border:0;border-left:0px solid transparent;border-right:0px solid transparent;border-top:0px solid transparent;border-bottom:0px solid transparent;border-radius:0px;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;"
                                                                                                             width="127"
                                                                                                             height="auto" />

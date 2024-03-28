@@ -117,7 +117,7 @@ class BranchEmployeeRepo implements BranchEmployeeInterface
         $branchEmployee = $this->branchEmployee->create($branchEmployeeData);
         
         $data = [
-            'link' => "https://admin.asfarcogroup.com/verification?e=".Crypt::encryptString($branchEmployee->email),
+            'link' => "https://dashboard.asfarcogroup.com/verification?e=".Crypt::encryptString($branchEmployee->email),
             'email' => $branchEmployee->email
         ];
         Mail::to($data['email'])->send(new InvitationsEmail($data));

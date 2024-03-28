@@ -118,7 +118,7 @@ class BranchManagerRepo implements BranchManagerInterface
         
 
         $data = [
-            'link' => "https://admin.asfarcogroup.com/verification?e=".Crypt::encryptString($branchManager->email),
+            'link' => "https://dashboard.asfarcogroup.com/verification?e=".Crypt::encryptString($branchManager->email),
             'email' => $branchManager->email
         ];
         Mail::to($data['email'])->send(new InvitationsEmail($data));

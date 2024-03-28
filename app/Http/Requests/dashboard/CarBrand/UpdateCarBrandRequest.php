@@ -18,7 +18,7 @@ class UpdateCarBrandRequest extends FormRequest
             'id' => 'required',
             'name_en' => 'required',
             'name_ar' => 'required',
-            'image' => 'required|url|active_url',
+            'image' => 'required|url',
             
             
         ];

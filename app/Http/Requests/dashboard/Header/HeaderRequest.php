@@ -19,8 +19,8 @@ class HeaderRequest extends FormRequest
             'title_ar' => 'required',
             'description_en' => 'required',
             'description_ar' => 'required',
-            'image_en' => 'required|url|active_url',
-            'image_ar' => 'required|url|active_url',
+            'image_en' => 'required|url',
+            'image_ar' => 'required|url',
             
         ];
     }

@@ -23,7 +23,7 @@ class RegisterRequest extends FormRequest
             'register_type' => 'required|in:Email,Apple,Gmail',
             'nationality' => 'required',
             'Documents' => 'array',
-            'Documents.*' => 'required|url|active_url',
+            'Documents.*' => 'required|url',
             
         ];
     }

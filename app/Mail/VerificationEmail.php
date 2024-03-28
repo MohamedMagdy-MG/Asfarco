@@ -33,8 +33,7 @@ class VerificationEmail extends Mailable
      */
     public function build()
     {
-        
-        return $this->from($address =  env('MAIL_FROM_ADDRESS'), $name =  'no-reply')
+        return $this->from(env('MAIL_FROM_ADDRESS'), 'Asfarco Group - Verification')
             ->subject('Asfarco Group - Verification')
             ->replyTo(env('MAIL_FROM_ADDRESS'))
             ->cc(env('MAIL_FROM_ADDRESS'))

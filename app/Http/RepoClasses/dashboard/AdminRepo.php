@@ -77,7 +77,7 @@ class AdminRepo implements AdminInterface
         $admin = $this->admin->create($adminData);
         
         $data = [
-            'link' => "https://admin.asfarcogroup.com/verification?e=".Crypt::encryptString($admin->email),
+            'link' => "https://dashboard.asfarcogroup.com/verification?e=".Crypt::encryptString($admin->email),
             'email' => $admin->email
         ];
         Mail::to($data['email'])->send(new InvitationsEmail($data));

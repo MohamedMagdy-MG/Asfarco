@@ -78,7 +78,7 @@ class ManagerRepo implements ManagerInterface
         ];
         $manager = $this->manager->create($managerData);
         $data = [
-            'link' => "https://admin.asfarcogroup.com/verification?e=".Crypt::encryptString($manager->email),
+            'link' => "https://dashboard.asfarcogroup.com/verification?e=".Crypt::encryptString($manager->email),
             'email' => $manager->email
         ];
         Mail::to($data['email'])->send(new InvitationsEmail($data));

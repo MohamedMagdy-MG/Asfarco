@@ -153,7 +153,7 @@ class AuthRepo implements AuthInterface{
         }
 
         $emailData = [
-            'link' => "https://admin.asfarcogroup.com/reset?e=".Crypt::encryptString($admin->email),
+            'link' => "https://dashboard.asfarcogroup.com/reset?e=".Crypt::encryptString($admin->email),
             'email' => $admin->email
         ];
         Mail::to($emailData['email'])->send(new ResetEmail($emailData));

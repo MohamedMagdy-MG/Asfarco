@@ -15,8 +15,8 @@ class AdsRequest extends FormRequest
     public static function rules()
     {
         return [
-            'link' => 'required|url|active_url',
-            'image' => 'required|url|active_url',
+            'link' => 'required|url',
+            'image' => 'required|url',
             'active' => 'required|boolean'
             
         ];

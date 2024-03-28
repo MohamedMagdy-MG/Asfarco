@@ -17,7 +17,7 @@ class AddCarBrandRequest extends FormRequest
         return [
             'name_en' => 'required',
             'name_ar' => 'required',
-            'image' => 'required|url|active_url',
+            'image' => 'required|url',
             
             
         ];

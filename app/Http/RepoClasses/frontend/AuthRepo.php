@@ -213,7 +213,7 @@ class AuthRepo implements AuthInterface{
     }
 
     public function Register($data = []){
-
+		
         $country = $this->country->where('nationality_en',$data['nationality'])->orWhere('nationality_ar',$data['nationality'])->first();
         if(!$country){
             request()->headers->has('language') ? $language = request()->headers->get('language') : $language = 'en';

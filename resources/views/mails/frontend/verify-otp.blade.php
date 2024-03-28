@@ -358,7 +358,7 @@
                                                   <tr>
                                                     <td style="width: 252px">
                                                       <img
-                                                        src="https://api.newsypro.com/media/MailImages/1695817237.png"
+                                                        src="https://services.asfarcogroup.com/media/Logo.png"
                                                         style="
                                                           border: 0;
                                                           border-left: 0px solid
@@ -1309,7 +1309,7 @@
                                                   <tr>
                                                     <td style="width: 157px">
                                                       <img
-                                                        src="https://api.newsypro.com/media/MailImages/1695817237.png"
+                                                        src="https://services.asfarcogroup.com/media/Logo.png"
                                                         style="
                                                           border: 0;
                                                           border-left: 0px solid

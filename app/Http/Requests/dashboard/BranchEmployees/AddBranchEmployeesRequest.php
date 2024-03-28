@@ -21,7 +21,7 @@ class AddBranchEmployeesRequest extends FormRequest
             'gender'=> 'required|in:Male,Female,Other',
             'email' => 'required|email|unique:admins,email',
             // 'password' => 'required|min:8|max:30',
-            'image' => 'nullable|url|active_url',
+            'image' => 'nullable|url',
             'branch' => Auth::guard('dashboard')->user()->role == 'Branch Manager' ? 'nullable' : 'required',
 
         ];
